@@ -1,0 +1,33 @@
+{
+    "leactures": [
+        {
+            "_id": "lecture:abc",
+            "lectureDescription": "Module 1: Intro",
+            "lectureType": "",
+            "startTime": 1626715588,
+            "attendanceBy": "QUIZ",
+            "classID": "class:abc",
+            "classTitle":"MIS",
+            "lectureDoubt":[]
+        }, {
+            "_id": "lecture:xyz",
+            "lectureDescription": "Module 1: Introduct",
+            "lectureType": "",
+            "startTime": 1647715588,
+            "attendanceBy": "QUIZ",
+            "classID": "class:abc",
+            "classTitle":"BDA",
+            "lectureDoubt":[]
+        }, {
+            "_id": "lecture:xyz",
+            "lectureDescription": "Module 1: Introduction",
+            "lectureType": "",
+            "startTime": 1686895588,
+            "attendanceBy": "QUIZ",
+            "classID": "class:abc",
+            "classTitle":"DSIP",
+            "lectureDoubt":[]
+        }
+    ]
+
+}
