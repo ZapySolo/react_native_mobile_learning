@@ -7,9 +7,14 @@ import { Video, AVPlaybackStatus } from 'expo-av';
 import * as _ from 'lodash';
 const imageLink = 'https://source.unsplash.com/200x200';
 
+const data = [
+    { title: 'Manisha Kode', description: 'Mam we dont have the formula for sin2T + cos2T' },
+    { title: 'Simran', description: 'Mam pleae give us the spreatsheet of formulas' },
+];
+
 const Leacture = (props) => {
     const [doubtText, setDoubtText] = useState('');
-    const [data, setData] = useState(props.route.params.item);
+    //const [data, setData] = useState(props.route.params.item);
     const [doubtList, setDoubtList] = useState(data);
     const [doubtButtonState, setDoubtButtonState] = useState(false);
     const video = React.useRef(null);
@@ -107,10 +112,5 @@ const styles = StyleSheet.create({
     right: 0,
   },
 });
-
-const data = [
-    { title: 'Manisha Kode', description: 'Mam we dont have the formula for sin2T + cos2T' },
-    { title: 'Simran', description: 'Mam pleae give us the spreatsheet of formulas' },
-];
 
 export default Leacture;

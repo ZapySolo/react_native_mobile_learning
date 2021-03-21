@@ -17,6 +17,8 @@ import CreateLeacture from './src/screen/CreateLeacture.js';
 import Lecture from './src/screen/Lecture';
 import Test from './src/screen/Test';
 import CreateJoinClass from './src/screen/CreateJoinClass';
+import ClassHome from './src/screen/ClassHome';
+import CreateTest from './src/screen/CreateTest';
 
 import { Layout, Input, Button, Text, Avatar, List, ListItem} from '@ui-kitten/components';
 
@@ -50,6 +52,8 @@ export default function App() {
             <Drawer.Screen name="Test" component={Test} />
             <Drawer.Screen name="Settings" component={Settings} />
             <Drawer.Screen name="CreateJoinClass" component={CreateJoinClass} />
+            <Drawer.Screen name="ClassHome" component={ClassHome} />
+            <Drawer.Screen name="CreateTest" component={CreateTest} />
           </Drawer.Navigator>
         </NavigationContainer>
       : 
@@ -127,7 +131,7 @@ const CustomDrawer = (props) => {
               style={{borderRadius:5}}
               title={`${item.title}`}
               description={`${item.subTitle}`}
-              onPress={()=>{props.navigation.navigate("Home", {...item.params})}}
+              onPress={()=>{props.navigation.navigate("ClassHome", {...item})}}
               accessoryLeft={() => <Avatar size='medium' source={{uri:'https://source.unsplash.com/200x200/?abstract'}}/>}
             />
         )}

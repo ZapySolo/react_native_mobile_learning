@@ -3,6 +3,7 @@ const uuidRegEx = require('./base');
 
 const Lecture = Joi.object({
     _id: Joi.string().pattern(uuidRegEx('lecture')).required(),
+    lectureTitle: Joi.string().required(),
     lectureDescription:  Joi.string().optional(),
     lectureType:  Joi.string().optional(),
     startTime: Joi.date().iso().required(),

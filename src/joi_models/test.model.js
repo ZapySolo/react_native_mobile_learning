@@ -10,6 +10,7 @@ const Test = Joi.object({
         question: Joi.string().required(),
         questionType: Joi.string().valid('STRING', 'IMAGE'),
         answerType: Joi.string().valid('RADIO_BUTTON', 'FILE_UPLOAD', 'TEXT_INPUT', 'CHECKBOX'),
+        answer: Joi.string().optional(),
         options: Joi.array().items({
             _id: Joi.string().required(),
             text: Joi.string().required(),

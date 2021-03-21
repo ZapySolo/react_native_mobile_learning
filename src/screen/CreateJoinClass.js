@@ -6,7 +6,7 @@ import Header from '../Header';
 
 const CreateJoinClass = (props) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
-
+    
     return (
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level="4" style={{flex: 1}}>
@@ -36,7 +36,7 @@ const CreateJoinClass = (props) => {
                             />
                     </View>
                     <View style={{marginTop:10}}>
-                        <Button >Submit</Button>
+                        <Button >Create Class</Button>
                     </View>
                 </Layout>
             </View>

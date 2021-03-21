@@ -1,9 +1,11 @@
-import React from 'react';
+import React, {useState} from 'react';
 import * as eva from '@eva-design/eva';
-import { Layout, Text, Divider, List, ListItem, Icon, Button, Avatar, Card} from '@ui-kitten/components';
-import { SafeAreaView, View, StyleSheet} from 'react-native';
+import { Layout, Text, Divider, List, ListItem, Icon, Button, Avatar, Card,OverflowMenu,MenuItem } from '@ui-kitten/components';
+import { SafeAreaView, View, StyleSheet, Modal} from 'react-native';
 import Header from '../Header';
 import dummyData from '../dummyData.json';
+
+import * as _ from 'lodash';
 const data = [
     { title: 'MIS', description: 'ongoing' },
     { title: 'DIS', description: '2 hrs' },
@@ -20,15 +22,46 @@ const postData = [
 
 const imageLink = 'https://source.unsplash.com/200x200'; //https://source.unsplash.com/100x100/?face
 
-const HomeScreen = (props) => {
+const ClassHome = (props) => {
+    const [userType, setUserType] = useState('TEACHER'); //STUDENT TEACHER
+    //const [overflowMenu, setOverflowMenu] = useState(false); 
+
+    const [overflowMenu, setOverflowMenu] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState(null);
+
     const renderItemAccessory = (props) => (
         <Button size='tiny'>FOLLOW</Button>
     );
 
+    const headerRight = () => {
+        return (userType === 'TEACHER') 
+        ? 
+            <OverflowMenu
+                anchor={()=><Button onPress={()=>{setOverflowMenu(true)}} appearance="ghost">:</Button>}
+                visible={overflowMenu}
+                selectedIndex={selectedIndex}
+                onSelect={(val)=>{
+                    setOverflowMenu(false)
+                    //setSelectedIndex(val);
+                    if(val.row === 0){
+                        props.navigation.navigate("Create Lecture");
+                    } else if (val.row === 1){
+                        props.navigation.navigate("CreateTest");
+                    }
+                }}
+                onBackdropPress={() => setOverflowMenu(false)}
+                >
+                <MenuItem title='Create New Lecture'/>
+                <MenuItem title='Create New Test'/>
+                <MenuItem disabled title='About'/>
+            </OverflowMenu> 
+        : <></>
+    }
+    
      const renderItemHeader = (headerProps, info) => (
         <View {...headerProps} style={{flexDirection:'row'}}>
         <View style={{padding:10, paddingRight:0}}>
-            <Avatar size='tiny' source={{uri:imageLink+2+1}}/>
+            <Avatar size='tiny' source={{uri:imageLink}}/>
         </View>
         <View style={{flexGrow:1,padding:10, justifyContent:'center'}}>
             <Text category='s1'> {info.item.title} </Text>
@@ -53,7 +86,6 @@ const HomeScreen = (props) => {
         let calculateTime = new Date(time).getTime();
 
         let diff = calculateTime - currentTime;
-        console.log('diff',diff);
         if(diff <= 0){
             return 'ongoing';
         } else if(diff <= 60*1000){
@@ -68,10 +100,7 @@ const HomeScreen = (props) => {
     return (
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level="2" style={{flex: 1}}>
-            <Header title="Home Screen" left={<Text onPress={()=>{props.navigation.openDrawer()}}>Drawer</Text>}/>
-            <View style={{padding:10, paddingBottom:0}}>
-                <Text category='s1'>Today</Text>
-            </View>
+            <Header title={_.get(props, 'route.params.title', 'Classroom')} right={headerRight()} left={<Text onPress={()=>{props.navigation.openDrawer()}}>Drawer</Text>}/>
             <List
                 style={[styles.container, {padding:10, flexGrow:1}]}
                 data={dummyData.leactures}
@@ -82,12 +111,12 @@ const HomeScreen = (props) => {
                         style={{ borderRadius:5}}
                         title={`${item.classTitle}`}
                         description={`${item.lectureDescription}`}
-                        accessoryLeft={() => <Avatar size='medium' source={{uri:imageLink+2}}/>}
+                        accessoryLeft={() => <Avatar size='medium' source={{uri:imageLink}}/>}
                         accessoryRight={() => <Text category="label" appearance="hint">{calculateTimeRemm(item.startTime)}</Text>}
                         />
                 )}
                 />
-            <View style={{padding:10, paddingBottom:0}}>
+            <View style={{padding:10}}>
                 <Text category='s1'>POSTS</Text>
             </View>
             <View>
@@ -137,4 +166,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default ClassHome;

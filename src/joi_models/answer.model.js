@@ -8,9 +8,17 @@ const Answer = Joi.object({
     answers: Joi.array().items(Joi.object({
         questionID: Joi.string().required(),
         type: Joi.string().valid('RADIO_BUTTON', 'FILE_UPLOAD', 'TEXT_INPUT', 'CHECKBOX'),
+        
         answer: Joi.array().items(Joi.object({
-            optionID: Joi.string().required()
-        }))
+            optionID: Joi.string().optional()
+        })).optional(),
+
+        answerText: Joi.string().optional(),
+        
+        answer: Joi.object({
+            optionID: Joi.string().optional()
+        }).optional(),
+
     })),
     isDeleted: Joi.boolean().required().default(false)
 });
