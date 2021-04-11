@@ -40,7 +40,7 @@ const CreateTest = (props) => {
     return (
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level='4' style={{flex: 1}}>
-            <Header title="Create Test" left={<Text onPress={()=>{props.navigation.navigate("Home")}}>Back</Text>}/>
+            <Header title="Create Test" left={<Text onPress={()=>{props.navigation.navigate("ClassHome")}}>Back</Text>}/>
             <ScrollView style={{flexGrow:1}}>
 
             <View style={{padding:10}}>
@@ -117,6 +117,7 @@ const CreateTest = (props) => {
                         accessoryLeft={() => <Text style={{color:'#8F9BB3'}}>Ans.</Text>}
                         />}
                     {(question.questionType==='RADIO_BUTTON'||question.questionType==='CHECKBOX')&& _.map(_.get(question, 'options', []), (option, indX) => <Input
+                        key={question.questionType+'_'+indX+'_'+index}
                         placeholder={'option '+(indX+1)}
                         style={{marginBottom:5}}
                         value={option.text}

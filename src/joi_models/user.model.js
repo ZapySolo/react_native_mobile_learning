@@ -14,7 +14,8 @@ const User = Joi.object({
     allowEmailNotification: Joi.boolean().required(),
     type: Joi.string().valid('ADMIN', 'USER').required(),
     isDeleted: Joi.boolean().required().default(false),
-    created: Joi.date().iso().optional()
+    created: Joi.date().iso().optional(),
+    colorTheme: Joi.string().valid('DARK', 'LIGHT').optional(),
 });
 
 module.export = User;

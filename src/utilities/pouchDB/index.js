@@ -2,6 +2,7 @@ import PouchDB from 'pouchdb-react-native';
 import PouchFind from 'pouchdb-find';
 import uuid from 'react-native-uuid';
 import {get, set, pick, unset } from 'lodash';
+import {ToastAndroid} from 'react-native';
 // import PouchAuth from 'pouchdb-authentication';
 
 PouchDB.plugin(PouchFind);
@@ -83,6 +84,14 @@ class Repository {
                         _id: typeof partition === 'string' ? result.id.split(':')[1] : result.id,
                         _rev: result.rev
                     }))
+                    .then((result)=>{
+                        ToastAndroid.showWithGravityAndOffset(
+                            `${result.id.split(':')[0]} updated`,
+                            ToastAndroid.SHORT,
+                            ToastAndroid.BOTTOM,
+                            25, 50
+                        );
+                    })
                     .catch((error) => reject({
                         error: `Could not upsert document with _id "${get(data, '_id')}"`,
                         dbError: error

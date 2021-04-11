@@ -7,7 +7,8 @@ const Lecture = Joi.object({
     lectureDescription:  Joi.string().optional(),
     lectureType:  Joi.string().optional(),
     startTime: Joi.date().iso().required(),
-    attendanceBy: Joi.string().valid('QUIZ', 'STUDENT_PRESENT', 'COMPLETED').required(),
+    endTime: Joi.date().iso().required(),
+    attendanceBy: Joi.string().valid('QUIZ', 'STUDENT_PRESENT', 'COMPLETED_ANYTIME').required(),
     //Quiz <--
     //STUDENT_PRESENT <-- student present when the lecture is live
     //COMPLETED <-- student complete watching the lecture anytime

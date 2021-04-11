@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler';
 import React, { useState, useEffect } from 'react';
 import * as eva from '@eva-design/eva';
-import {SafeAreaView, View, Image, Appearance} from 'react-native';
+import {SafeAreaView, View, Image, Appearance, ToastAndroid} from 'react-native';
 import { ApplicationProvider, Divider, IconRegistry, Toggle } from '@ui-kitten/components';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
@@ -10,6 +10,9 @@ import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-community/async-storage';
 import Settings from './src/screen/Settings';
 import _ from 'lodash';
+import {v4 as uuid} from "uuid";
+
+import CustomDrawer from './src/CustomDrawer';
 
 //import Login from './src/screen/Login';
 // // import { EvaIconsPack } from '@ui-kitten/eva-icons'; //<-- NOT WORKING
@@ -40,8 +43,17 @@ export default function App() {
   const [loginError, setLoginError] = React.useState(false);
   const [clientProfile, setClientProfile] = React.useState(null);
 
-  const onThemeChange = ({colorScheme}) => {
-    setToggleTheme(colorScheme === 'dark' ? false : true);
+  const [newCreateUsername, setnewCreateUsername] = React.useState(null);
+  const [newCreateEmail, setnewCreateEmail] = React.useState(null);
+  const [newCreatePassword, setnewCreatePassword] = React.useState(null);
+
+  const checkForTheme = async () => {
+    let result = await AsyncStorage.getItem('@color_theme');
+    if(!result){
+      await AsyncStorage.setItem('@color_theme', 'LIGHT');
+    } else {
+      setToggleTheme(result === 'DARK' ? false : true);
+    }
   }
 
   const checkIfAlreadyLoggedIn = async () => {
@@ -56,8 +68,7 @@ export default function App() {
 
   React.useEffect(() => {
     checkIfAlreadyLoggedIn();
-    Appearance.addChangeListener(onThemeChange);
-    return () => Appearance.removeChangeListener(onThemeChange);
+    checkForTheme()
   }, []);
 
   const handleLogin = async () => {
@@ -68,8 +79,8 @@ export default function App() {
       Crypto.CryptoDigestAlgorithm.SHA256,
       loginPassword
     );
-    // console.log({email, password});
 
+    // console.log({email, password});
     //   let upsertREs = await db.upsert({
     //     _id: 'profile:6289c5fd-f671-4e83-989b-e23662981fd9',
     //     username: 'Raj Surve',
@@ -110,6 +121,69 @@ export default function App() {
     }
   }
 
+  const handleCreateNewUser = async () => {
+    let res = {
+      newCreateUsername: /^[a-z A-Z\-]+$/.test(newCreateUsername),
+      newCreateEmail: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(newCreateEmail),
+      newCreatePassword: /^[a-zA-Z0-9\-]+$/.test(newCreatePassword)
+    }
+    if(res.newCreateEmail && res.newCreateUsername && res.newCreatePassword){
+        let alreadyContainEmail = await db.findMany({
+          email: newCreateEmail
+        });
+        if(alreadyContainEmail.length === 0){
+          let obj = {
+            _id: "profile:"+uuid.v4(),
+            allowEmailNotification: false,
+            allowPushNotification: false,
+            created: new Date().toISOString(),
+            isDeleted: false,
+            password: {
+              salt: 'abc',
+              hash: await Crypto.digestStringAsync(
+                Crypto.CryptoDigestAlgorithm.SHA256,
+                newCreatePassword
+              )
+            },
+            profileImageUrl: 'https://source.unsplash.com/200x200/?'+_.replace(newCreateUsername, / /g, ""),
+            type: 'USER',
+            username: newCreateUsername,
+            email: newCreateEmail
+          }
+          let createRes = await db.upsert(obj);
+          if(createRes){
+            ToastAndroid.showWithGravityAndOffset(
+              "User Successfully Created",
+              ToastAndroid.SHORT,
+              ToastAndroid.BOTTOM,
+              25, 50
+            );
+            setLoginEmail(newCreateEmail);
+            setLoginPassword(newCreatePassword);
+            setLoginFormInput('LOGIN');
+
+            setnewCreateEmail('');
+            setnewCreatePassword('');
+            setnewCreateUsername('');
+        }
+      } else {
+        ToastAndroid.showWithGravityAndOffset(
+          "Email already in use",
+          ToastAndroid.SHORT,
+          ToastAndroid.BOTTOM,
+          25, 50
+      );
+      }
+    } else {
+      ToastAndroid.showWithGravityAndOffset(
+        "Invalid Credentials",
+        ToastAndroid.SHORT,
+        ToastAndroid.BOTTOM,
+        25, 50
+    );
+    }
+  }
+
   return (
     <ApplicationProvider {...eva} theme={toggleTheme?eva.light:eva.dark}>
       {loggedIn
@@ -136,22 +210,34 @@ export default function App() {
             <Text category="h1">Mobile Learning</Text>
             <Text category="h6">Creating new Modern Classes</Text>
         </View>
-        {!loginFormInput?<>
-        <View style={{}}>
-            <View style={{alignItems:'center'}}>
-                <Button disabled accessoryLeft={()=><Text>G</Text>} style={{width:'60%'}}> Sign in with Google </Button>
+        {loginFormInput === 'LOGIN' || loginFormInput === 'REGISTER' ? <>
+          {loginFormInput === 'LOGIN' ? 
+            <View style={{padding:10}}>
+                <View ><Input value={loginEmail} status={loginError?"danger":"basic"} onChangeText={o=>setLoginEmail(o)} size="large" placeholder="Enter your email"/></View>
+                <View style={{paddingTop:0}}><Input status={loginError?"danger":"basic"} value={loginPassword} onChangeText={o=>setLoginPassword(o)} secureTextEntry={true} size="large" placeholder="Enter your password" /></View>
+                <Button style={{marginTop:10}} onPress={()=>{handleLogin()}}>Login</Button>
+                <Button appearance="outline" style={{marginTop:10}} onPress={()=>{setLoginFormInput(false)}}>Back</Button>
             </View>
-            <View style={{alignItems:'center', marginTop:30}}>
-                <Button accessoryLeft={()=><Text>ML</Text>} style={{width:'60%'}} onPress={()=>{setLoginFormInput(true)}}> Sign in with ML Account </Button>
-            </View>
-        </View>
-        </> : <>
-        <View style={{padding:10}}>
-            <View ><Input value={loginEmail} status={loginError?"danger":"basic"} onChangeText={o=>setLoginEmail(o)} size="large" placeholder="Enter your email"/></View>
-            <View style={{paddingTop:0}}><Input status={loginError?"danger":"basic"} value={loginPassword} onChangeText={o=>setLoginPassword(o)} secureTextEntry={true} size="large" placeholder="Enter your password" /></View>
-            <Button style={{marginTop:10}} onPress={()=>{handleLogin()}}>Login</Button>
-            <Button appearance="outline" style={{marginTop:10}} onPress={()=>{setLoginFormInput(false)}}>Back</Button>
-        </View>
+            :<View style={{padding:10}}>
+                <View ><Input value={newCreateUsername} onChangeText={o=>setnewCreateUsername(o)} size="large" placeholder="Enter your username"/></View>
+                <View ><Input value={newCreateEmail} onChangeText={o=>setnewCreateEmail(o)} size="large" placeholder="Enter your email"/></View>
+                <View style={{paddingTop:0}}><Input value={newCreatePassword} onChangeText={o=>setnewCreatePassword(o)} secureTextEntry={true} size="large" placeholder="Enter your password" /></View>
+                <Button style={{marginTop:10}} onPress={()=>{handleCreateNewUser()}}>Create Account</Button>
+                <Button appearance="outline" style={{marginTop:10}} onPress={()=>{setLoginFormInput(false)}}>Back</Button>
+            </View>}
+          </>
+          :<>
+          <View>
+              <View style={{alignItems:'center'}}>
+                  <Button disabled accessoryLeft={()=><Text>G</Text>} style={{width:'60%'}}> Sign in with Google </Button>
+              </View>
+              <View style={{alignItems:'center', marginTop:30}}>
+                  <Button accessoryLeft={()=><Text>ML</Text>} style={{width:'60%'}} onPress={()=>{setLoginFormInput('LOGIN')}}> Sign in with ML Account </Button>
+              </View>
+              <View>
+                <Button appearance="ghost" onPress={()=>{setLoginFormInput('REGISTER')}} style={{marginTop:20}}>Create a ML Account</Button>
+              </View>
+          </View>
         </>}
         <View style={{ alignItems:"center", justifyContent:'flex-end', padding:20}}>
             <View style={{flexDirection:'row', alignItems:'center'}}>
@@ -164,87 +250,4 @@ export default function App() {
       </Layout>}
       </ApplicationProvider>
   );
-}
-
-const CustomDrawer = (props) => {
-  //const navigation = useNavigation();
-  const [clientProfile, setClientProfile] = React.useState(null);
-  const [classList, setClassList] = React.useState([]);
-
-  useEffect(() => {
-    getUserProfile();
-  }, [])
-
-  const getUserProfile = async () => {
-    let res = JSON.parse(await AsyncStorage.getItem('@client_profile'))
-    if(res){
-      setClientProfile(res);
-      getClassList();
-    } else {
-      console.log('no profile found!');
-    }
-  }
-
-  const getClassList = async () => {
-    let listAsTeacher = await db.findMany({
-      _id: {
-        $regex: 'class'
-      },
-      teacherID: clientProfile._id
-    });
-    listAsTeacher = _.map(listAsTeacher, o => {return {...o, userType:'TEACHER'}});
-    let listAsStudent = await db.findMany({
-      _id: {
-        $regex: 'class'
-      },
-      students: { $all: [clientProfile._id] }
-    });
-    listAsStudent = _.map(listAsStudent, o => {return {...o, userType:'STUDENT'}});
-
-    setClassList([...listAsTeacher,...listAsStudent]);
-  }
-
-  return (
-      <Layout level="1" style={{flex:1, paddingTop:30}}>
-        {clientProfile ? (<View style={{alignItems:'center', marginTop:30, marginBottom:25}}>
-          <Image source={{uri:clientProfile.profileImageUrl ? clientProfile.profileImageUrl:'https://source.unsplash.com/200x200/?face'}} style={{height:80, width:80, borderRadius:40, marginBottom:5}}/>
-          <Text category="h5">Welcome, {clientProfile.username}</Text>
-          <Text category="s1">{clientProfile.email}</Text>
-          <Text category="s1" appearance="hint" onPress={()=>{props.navigation.navigate("Settings")}}>Settings</Text>
-        </View>): <></>}
-        <Divider />
-        <List
-          style={{padding:10, flexGrow:1}}
-          data={classList}
-          renderItem={({ item, index }) => (
-            <ListItem
-              style={{borderRadius:5}}
-              title={`${item.classTitle}`}
-              description={`${item.classSubTitle}`}
-              onPress={()=>{props.navigation.navigate("ClassHome", {data:{...item}})}}
-              accessoryLeft={() => <Avatar size='medium' source={{uri:item.classProfileImage?item.classProfileImage:'https://source.unsplash.com/200x200/?abstract'}}/>}
-            />
-        )}
-          ItemSeparatorComponent={() => <View style={{marginTop:5}} />}
-          />
-        <View>
-          <Button appearance="ghost" onPress={()=>{props.navigation.navigate("CreateJoinClass")}}>Create/Join Class</Button>
-        </View>
-        <View style={{padding:10, alignItems:'center', textAlign:'center', justifyContent:'center', paddingTop:30}}>
-          <Text category="p1" appearance='hint' style={{textAlign:"center", lineHeight:23, fontStyle:'italic'}} >Education is the passport to the future for tomorrow belongs to those who prepare for it today.</Text>
-        </View>
-        <View style={{marginTop:30}}>
-          <Button 
-            //accessoryRight={()=><Text>{'>'}</Text>}
-            appearance="ghost" 
-            onPress={async()=>{
-              await AsyncStorage.setItem('@client_profile', '');
-              props.setLoggedIn(false)
-            }}>Logout {" >"}</Button>
-        </View>
-        <View style={{alignItems:"center", justifyContent:'flex-end', padding:15}}>
-            <Text category="s1" appearance='hint'>Created By Pied Piper</Text>
-        </View>
-      </Layout>
-  )
 }

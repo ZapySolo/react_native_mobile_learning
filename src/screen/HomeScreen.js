@@ -41,13 +41,6 @@ const lectureData = [
     }
 ];
 
-const postData = [
-    { title: 'Gore M', duration: '1 hrs', type:'POST', description:'Lecture has been conducted'},
-    { title: 'PK Swan', duration: '2 hrs', type:'TEST', description:'Give Test'},
-    { title: 'Austin', duration: '4 hrs', type:'CREATE_TEST', description:'Create Test'},
-    { title: 'Austin', duration: '4 hrs', type:'CREATE_LECTURE', description:'Create Lecture'},
-];
-
 const imageLink = 'https://source.unsplash.com/200x200'; //https://source.unsplash.com/100x100/?face
 
 const HomeScreen = (props) => {
@@ -70,15 +63,23 @@ const HomeScreen = (props) => {
         console.log('getting homepage data!');
     }
 
-    useEffect(()=>{
-        getClientData();
-    },[JSON.stringify(clientProfile)]);
+    React.useEffect(() => {
+        const unsubscribe = props.navigation.addListener('focus', () => {
+            getData();
+        });
+        return unsubscribe;
+    }, [props.navigation]);
 
     useEffect(()=>{
-        if(!(_.get(Object.keys(clientProfile), 'length', 0) === 0 && _.get(clientProfile, 'constructor') === Object)){
+        getClientData();
+    },[]);
+
+    useEffect(()=>{
+        if(clientProfile){
             getData();
         }
-    }, [clientProfile]);
+    },[clientProfile]);
+
 
     const calculateTimeRemm = (time) => {
         let currentTime = new Date().getTime();

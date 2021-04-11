@@ -32,7 +32,7 @@ const ClassHome = (props) => {
     const [classDetails, setClassDetails] = useState(_.get(props, 'route.params.data'));
 
     const handleDeleteClass = async () => {
-
+        //<-- handle it here
     }
 
     useEffect(() => {
@@ -51,7 +51,7 @@ const ClassHome = (props) => {
                     setOverflowMenu(false)
                     //setSelectedIndex(val);
                     if(val.row === 0){
-                        props.navigation.navigate("Create Lecture");
+                        props.navigation.navigate("Create Lecture", {data:{...classDetails}});
                     } else if (val.row === 1){
                         props.navigation.navigate("CreateTest");
                     }
@@ -60,7 +60,8 @@ const ClassHome = (props) => {
                 >
                 <MenuItem title='Create New Lecture'/>
                 <MenuItem title='Create New Test'/>
-                <MenuItem title='Delete Class'/>
+                <MenuItem disabled title='Delete Class'/>
+                <MenuItem disabled title='Stats'/>
                 <MenuItem disabled title='About'/>
             </OverflowMenu> 
         : <></>

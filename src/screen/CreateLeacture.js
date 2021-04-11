@@ -1,24 +1,58 @@
 import React,{useState} from 'react';
 import * as eva from '@eva-design/eva';
-import { Layout, Text, Divider, List, ListItem, Icon, Button, Avatar, Card, Input, RadioGroup,Radio, RangeCalendar, SelectItem, Select, CheckBox } from '@ui-kitten/components';
-import { SafeAreaView, View, StyleSheet, ScrollView} from 'react-native';
+import { Layout, Text, Divider, List, ListItem, Icon, Button, Avatar, Card, Input, RadioGroup,Radio, RangeCalendar, SelectItem, Select, CheckBox, Modal } from '@ui-kitten/components';
+import { SafeAreaView, View, StyleSheet, ScrollView, Dimensions} from 'react-native';
 import Header from '../Header';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useEffect } from 'react/cjs/react.development';
 import CreateTestComponent from './CreateTestComponent';
 import * as _ from 'lodash';
+import moment from 'moment';
+import {v4 as uuid} from "uuid";
+
+import Repository from '../utilities/pouchDB';
+let db = new Repository();
+
+const windowWidth = Dimensions.get('window').width;
+const windowHeight = Dimensions.get('window').height;
 
 const CreateLeacture = (props) => {
+    //console.log('props', props);
     const [selectedLectureTypeIndex, setSelectedLectureTypeIndex] = useState(0);
     const [selectedDateIndex, setSelectedDateIndex] = useState(0);
     const [selectedLectureStartIndex, setSelectedLectureStartIndex] = useState(0);
+    const [selectedLectureEndIndex, setSelectedLectureEndIndex] = useState(0);
     const [selectedAttendenceByIndex, setSelectedAttendenceByIndex] = useState(0);
-    const [showDateTimePicker, setShowDateTimePicker] = useState(false);
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedTime, setSelectedTime] = useState(new Date());
+    
+    const [successLectureCreateModal, setSuccessLectureCreateModal] = useState(false);
 
     const [questionList, setQuestionList] = useState([{}]);
+
+    const [classDetails, setClassDetails] = useState(_.get(props, 'route.params.data'));
+
+    const initialLectureObj = {
+        _id:'lecture:'+uuid.v4(),
+        lectureTitle:'',
+        lectureDescription: '',
+        lectureType:'VIDEO_UPLOAD', //SCREEN_SHARING LIVE_CAMERA
+        videoLink:'',
+        startTime: moment().toISOString(),
+        endTime: moment().add(1, 'hour').toISOString(),
+        attendanceBy: 'QUIZ', //STUDENT_PRESENT COMPLETED
+        classID: _.get(props, 'route.params.data._id'),
+        lectureDoubt:[],
+        quizQuestions:[],
+        isDeleted:false,
+        created: new Date(),
+    }
     
+    useEffect(() => {
+        console.log('selectedLectureTypeIndex',selectedLectureTypeIndex);
+    }, [selectedLectureTypeIndex])
     useEffect(()=>{
         //console.log('questionList');
         if(selectedAttendenceByIndex === 0){
@@ -33,18 +67,7 @@ const CreateLeacture = (props) => {
         // setLectureDetails({...lectureDetails, startTime: new Date(new Date(selectedDate) + new Date(diffInTime).toISOString())})
     }, [questionList]);
 
-    const [lectureDetails, setLectureDetails] = useState({
-        _id:'lecture:123456',
-        lectureTitle:'',
-        lectureDescription: '',
-        lectureType:'VIDEO_UPLOAD', //SCREEN_SHARING LIVE_CAMERA
-        videoLink:'',//OPTIONAL
-        startTime: new Date(),
-        attendanceBy: 'QUIZ', //STUDENT_PRESENT COMPLETED
-        classID: 'class:1234',
-        lectureDoubt:[],
-        quizQuestions:[]
-    });
+    const [lectureDetails, setLectureDetails] = useState(initialLectureObj);
 
 
     // const lectureType = [
@@ -56,7 +79,7 @@ const CreateLeacture = (props) => {
     return (
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level="3" style={{flex: 1}}>
-            <Header title="Create Leacture" left={<Text onPress={()=>{props.navigation.navigate("Home")}}>{'< '}Back</Text>} right={null}/>
+            <Header title="Create Leacture" left={<Text onPress={()=>{props.navigation.navigate("ClassHome")}}>{'< '}Back</Text>} right={null}/>
             <ScrollView style={{flexGrow:1}}>
             <Layout level="1" style={{padding:10, margin:10, borderRadius:5}}>
                 <Input
@@ -97,48 +120,94 @@ const CreateLeacture = (props) => {
                         }
                     }}>
                     <Radio>Upload Video</Radio>
-                    <Radio disabled={true}>Screen Sharing</Radio>
-                    <Radio disabled={true}>Live Camera Session</Radio>
+                    <Radio disabled>Screen Sharing</Radio>
+                    <Radio disabled>Live Camera Session</Radio>
                 </RadioGroup>
-
+                {selectedLectureTypeIndex === 0 ?
+                    <Input
+                        accessoryLeft={() => <Text style={{color:'#8F9BB3'}}>{`Url`}</Text>}
+                        value={lectureDetails.videoLink}
+                        onChangeText={(o)=>{
+                            setLectureDetails({...lectureDetails, videoLink:o});
+                        }}
+                        style={{marginBottom:5}}
+                    /> : <></>}
                 <Text category="label" appearance='hint' style={{fontSize:12}}>Lecture Start Time</Text>
                 <RadioGroup
                 style={{marginBottom:5}}
                     selectedIndex={selectedLectureStartIndex}
                     onChange={index => {
                         if(index === 1){
-                            setShowDateTimePicker(true);
+                            setShowDatePicker(true);
                         }
                         setSelectedLectureStartIndex(index)
                     }}>
                     <Radio>Start Instatly</Radio>
-                    <Radio disabled>Select Date & Time</Radio>
-                    <Text style={{fontStyle:'italic'}}>{`Schedule on: ${new Date(lectureDetails.startTime).toDateString()} ${new Date(lectureDetails.startTime).toTimeString()}`}</Text>
+                    <Radio>Select Date & Time</Radio>
+                    <Text style={{fontStyle:'italic'}}>{`Schedule on: ${moment(lectureDetails.startTime).format('MMMM Do YYYY, h:mm a')}`}</Text>
                 </RadioGroup>
 
-                {showDateTimePicker && <>
+                {showDatePicker && <>
                     <Text category="label" appearance='hint' style={{fontSize:12, marginBottom:5}}>Select Date & Time</Text>
-                    
                     <RangeCalendar
                         style={{marginBottom:5}}
                         value={new Date(selectedDate)}
                         onSelect={({startDate}) => {
-                            setShowDateTimePicker(false);
-                            setSelectedDate(new Date(startDate));
+                            setSelectedDate(new Date(startDate).getTime());
+                            setShowTimePicker(true);
+                            setShowDatePicker(false);
                         }}
                         />
+                </>}
+
+                {showTimePicker &&<>
+                    <Text category="label" appearance='hint' style={{fontSize:12, marginBottom:5}}>Select Date & Time</Text>
                     <DateTimePicker
                         testID="dateTimePicker"
                         value={selectedTime}
                         mode={'time'}
                         display="default"
                         onChange={({nativeEvent})=>{
-                            setSelectedTime(new Date(nativeEvent.timestamp))
-                            //setShowDateTimePicker(false);
+                            let dateNow = new Date();
+                            let currentDayTimestamp = new Date(dateNow.getFullYear(), dateNow.getMonth(), dateNow.getDate()).getTime();
+                            let pickerTime = new Date(nativeEvent.timestamp).getTime();
+                            let diff = pickerTime - currentDayTimestamp;
+                            let newTime = moment(selectedDate + diff);
+                            setLectureDetails({...lectureDetails, startTime:newTime.toISOString(), endTime:newTime.add(1, 'hours').toISOString()});
+                            setSelectedLectureEndIndex(0);
+                            setShowTimePicker(false);
                         }}/>
                 </>}
 
-                <Text category="label" appearance='hint' style={{fontSize:12}}>Mark Attendence By:(optional)</Text>    
+                <Text category="label" appearance='hint' style={{fontSize:12}}>Lecture End Time</Text>
+                <RadioGroup
+                style={{marginBottom:5}}
+                    selectedIndex={selectedLectureEndIndex}
+                    onChange={index => {
+                        if(index === 0){
+                            let startTime = lectureDetails.startTime;
+                            setLectureDetails({...lectureDetails, endTime:moment(startTime).add(1, 'hours').toISOString()});
+                        }
+                        setSelectedLectureEndIndex(index);
+                    }}>
+                    <Radio>1 hr</Radio>
+                    <Radio>Custom</Radio>
+                    <Text style={{fontStyle:'italic'}}>{`Schedule on: ${moment(lectureDetails.endTime).format('MMMM Do YYYY, h:mm a')}`}</Text>
+                </RadioGroup>
+                {selectedLectureEndIndex === 1 ?
+                    <Input
+                        keyboardType="number-pad"
+                        accessoryLeft={() => <Text style={{color:'#8F9BB3'}}>{`Hrs`}</Text>}
+                        onChangeText={(o)=>{
+                            let startTime = lectureDetails.startTime;
+                            setLectureDetails({...lectureDetails, endTime:moment(startTime).add(o, 'hours').valueOf()});
+                            //setLectureDetails({...lectureDetails, videoLink:o});
+                        }}
+                        style={{marginBottom:5}}
+                    /> : <></>}
+
+
+                <Text category="label" appearance='hint' style={{fontSize:12}}>Mark Attendence By</Text>    
                 <RadioGroup
                 style={{marginBottom:5}}
                     selectedIndex={selectedAttendenceByIndex}
@@ -148,12 +217,12 @@ const CreateLeacture = (props) => {
                         } else if (index === 1){
                             setLectureDetails({...lectureDetails, attendanceBy:'STUDENT_PRESENT'})
                         } else if (index === 2){
-                            setLectureDetails({...lectureDetails, attendanceBy:'COMPLETED'})
+                            setLectureDetails({...lectureDetails, attendanceBy:'COMPLETED_ANYTIME'})
                         }
                         setSelectedAttendenceByIndex(index)
                     }}>
                     <Radio>Quiz</Radio>
-                    <Radio>Student present for lecture</Radio>
+                    <Radio disabled>Student present for lecture</Radio>
                     <Radio>Student completing the lecture (anytime)</Radio>
                 </RadioGroup>   
 
@@ -201,6 +270,14 @@ const CreateLeacture = (props) => {
                                 if(row === 2) questinTypeCode = 'TEXT_INPUT';
                                 if(row === 3) questinTypeCode = 'FILE_UPLOAD';
                                 setQuestionList(_.map(questionList, (o, indX) => {
+                                    if(index === indX && questinTypeCode === 'RADIO_BUTTON'){
+                                        o.options = _.map(o.options, oxx => {
+                                            return {
+                                                ...oxx,
+                                                isAnswer:false
+                                            }
+                                        })
+                                    }   
                                     return (index === indX) ? {
                                         ...o,
                                         questionType: questinTypeCode,
@@ -317,11 +394,38 @@ const CreateLeacture = (props) => {
             </>}
 
             <View style={{justifyContent:'center', alignItems:'center', marginTop:10}}>
-                <Button onPress={()=>{
-                    console.log(lectureDetails);
-                    setLectureDetails({});
+                <Button onPress={ async ()=>{
+                    let obj = _.cloneDeep(lectureDetails);
+                    if(obj.attendanceBy === "COMPLETED_ANYTIME"){
+                        obj.quizQuestions = [];
+                    }
+                    await db.upsert(obj);
+                    console.log('initialLectureObj',initialLectureObj);
+                    setLectureDetails(initialLectureObj);
+                    setSuccessLectureCreateModal(true);
+                    setTimeout(() => {
+                        setSuccessLectureCreateModal(false);
+                        props.navigation.navigate("ClassHome", {data:{..._.get(props, 'route.params.data', {})}});
+                    }, 3000);
                     }} style={styles.button} size='medium'> SUBMIT </Button>
             </View>
+
+            <Modal
+                visible={successLectureCreateModal}
+                style={{flex:1}}
+                backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.5)'}}
+                onBackdropPress={() => setSuccessClassCreateModal(false)}>
+                <View style={{ width:windowWidth, height:windowHeight, position:'relative'}}>
+                    <View style={{flexGrow:1}}></View>
+                    <Layout level="1"  style={{justifyContent:'center', alignItems:"center", textAlign:'center', padding:30, position:'absolute', bottom:'-10%', width:'100%'}}>
+                        <View style={{flexDirection:'column'}}>
+                            <View style={{justifyContent:'center', alignItems:'center'}}>
+                                <Text category="h5">Lecture Successfully Created!</Text>
+                            </View>
+                        </View>
+                    </Layout>
+                </View>
+            </Modal>
 
             </Layout>
         </ScrollView>
