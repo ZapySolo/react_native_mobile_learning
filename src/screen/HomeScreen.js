@@ -4,11 +4,38 @@ import { Layout, Text, Divider, List, ListItem, Icon, Button, Avatar, Card} from
 import { SafeAreaView, View, StyleSheet} from 'react-native';
 import Header from '../Header';
 import dummyData from '../dummyData.json';
-const data = [
-    { title: 'MIS', description: 'ongoing' },
-    { title: 'DIS', description: '2 hrs' },
-    { title: 'AUT', description: '4 hrs' },
-    { title: 'BII', description: '6 hrs' }
+import Repository from '../utilities/pouchDB';
+let db = new Repository();
+
+const lectureData = [
+    {
+        "_id": "lecture:abc",
+        "lectureDescription": "Module 1: Intro",
+        "lectureType": "",
+        "startTime": new Date(),
+        "attendanceBy": "QUIZ",
+        "classID": "class:abc",
+        "classTitle":"MIS",
+        "lectureDoubt":[]
+    }, {
+        "_id": "lecture:xyz",
+        "lectureDescription": "Module 1: Introduct",
+        "lectureType": "",
+        "startTime": new Date().getTime() + 1000*60*60, // getTime() + 59 min
+        "attendanceBy": "QUIZ",
+        "classID": "class:abc",
+        "classTitle":"BDA",
+        "lectureDoubt":[]
+    }, {
+        "_id": "lecture:xyz",
+        "lectureDescription": "Module 1: Introduction",
+        "lectureType": "",
+        "startTime": new Date().getTime() + 1000*60*60*25, // getTime() + 25 hrs
+        "attendanceBy": "QUIZ",
+        "classID": "class:abc",
+        "classTitle":"DSIP",
+        "lectureDoubt":[]
+    }
 ];
 
 const postData = [
@@ -48,21 +75,23 @@ const HomeScreen = (props) => {
     );
 
     const calculateTimeRemm = (time) => {
-        
-        let currentTime = Date.now();
+        let currentTime = new Date().getTime();
         let calculateTime = new Date(time).getTime();
 
         let diff = calculateTime - currentTime;
-        console.log('diff',diff);
-        if(diff <= 0){
+        console.log(`${calculateTime} - ${currentTime}`,diff);
+
+        if(diff <= -1000*60*60){
+            return '--';
+        } else if (diff <= 0){
             return 'ongoing';
-        } else if(diff <= 60*1000){
-            return parseInt(diff/(1000)) + ' min';
-        } else if(diff <= 24*60*1000){
-            return parseInt(diff/(60*1000)) + ' days'; 
-        } else {
-            return '--'
-        }
+        } else if (diff <= 1000*60*60){
+            return parseInt(diff/(1000*60))+' min';
+        } else if (diff <= 1000*60*60*24){
+            return parseInt(diff/(1000*60*60))+' hr';
+        } else if (diff <= 1000*60*60*24*30){
+            return parseInt(diff/(1000*60*60*24))+' days';
+        } 
     }
 
     return (
@@ -74,7 +103,7 @@ const HomeScreen = (props) => {
             </View>
             <List
                 style={[styles.container, {padding:10, flexGrow:1}]}
-                data={dummyData.leactures}
+                data={lectureData}
                 ItemSeparatorComponent={() => <View style={{marginBottom:10}} />}
                 renderItem={({ item, index }) => (
                     <ListItem
@@ -87,7 +116,7 @@ const HomeScreen = (props) => {
                         />
                 )}
                 />
-            <View style={{padding:10, paddingBottom:0}}>
+            {/* <View style={{padding:10, paddingBottom:0}}>
                 <Text category='s1'>POSTS</Text>
             </View>
             <View>
@@ -118,7 +147,7 @@ const HomeScreen = (props) => {
                         </Card>
                     )}
                     />
-            </View>
+            </View> */}
         </Layout>
     </SafeAreaView>);
 }

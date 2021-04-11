@@ -1,7 +1,7 @@
 import React,{useState, useEffect} from 'react';
 import * as eva from '@eva-design/eva';
 import { Layout, Text, Divider, List, ListItem, Icon, Button, Avatar, Card, Input, RadioGroup,Radio, RangeCalendar, SelectItem, Select,Toggle} from '@ui-kitten/components';
-import { SafeAreaView, View, StyleSheet, ScrollView} from 'react-native';
+import { SafeAreaView, View, StyleSheet, ScrollView, ToastAndroid} from 'react-native';
 import Header from '../Header';
 
 const Settings = (props) => {
@@ -12,6 +12,22 @@ const Settings = (props) => {
     const onCheckedChange = (isChecked) => {
         setNotificationState(isChecked);
     }
+
+    const showToast = (text) => {
+        // ToastAndroid.showWithGravity(
+        //     "All Your Base Are Belong To Us",
+        //     ToastAndroid.SHORT,
+        //     ToastAndroid.CENTER
+        //     );
+        ToastAndroid.showWithGravityAndOffset(
+            text,
+            ToastAndroid.LONG,
+            ToastAndroid.BOTTOM,
+            25,
+            50
+        );
+    };
+
     return (
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level='2' style={{flex: 1}}>
@@ -29,7 +45,7 @@ const Settings = (props) => {
                 description={()=><View>
                     <Text category='s1' >{'Change Name'}</Text>
                 </View>}
-                accessoryRight={() => <Input >Amit Goswami</Input>}
+                accessoryRight={() => <Input onBlur={()=>{showToast('Name Changed Successfully!')}} >Amit Goswami</Input>}
             />
             <Divider />
             <ListItem

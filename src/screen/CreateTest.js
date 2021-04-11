@@ -49,7 +49,7 @@ const CreateTest = (props) => {
                     <Text category="s2">{`No of questions: ${questionList.length}`}</Text>
                 </View>
 
-                {_.map(questionList, (question, index) => <Layout key={'questionList'+index} level="1" title="Question 3" style={{marginTop:10, padding:10, borderRadius:5}}>
+                {_.map(questionList, (question, index) => <Layout key={'questionList1'+index} level="1" title="Question 3" style={{marginTop:10, padding:10, borderRadius:5}}>
                     <Input
                         placeholder='Enter your question here'
                         style={{marginBottom:5}}
@@ -72,7 +72,7 @@ const CreateTest = (props) => {
                                 marks: num
                             } : o;
                         }))
-                        }} keyboardType="numeric" style={{marginBottom:5}} accessoryLeft={()=><Text appearance="hint">Marks</Text>}/>
+                        }} keyboardType="numeric" style={{marginBottom:5}} value={question.marks} accessoryLeft={()=><Text appearance="hint">Marks</Text>}/>
                     <Select
                         accessoryLeft={() => <Text style={{color:'#8F9BB3'}}>Answer Type.</Text>}
                         //placeholder='Text Field'
@@ -168,15 +168,28 @@ const CreateTest = (props) => {
                                 } : o;
                             }))
                         }}>Add Another Option</Button>}
-    
+
                         <View style={{flexDirection:'row'}}>
                             <Button status='danger' onPress={()=>{
                                 let newQuestionList = [];
                                 _.map(questionList, (o, indX) => {
                                     if(indX !== index) newQuestionList.push(o);
                                 })
-                                setQuestionList(newQuestionList);
+                                if(newQuestionList.length <= 0){
+                                    setQuestionList([{}]);
+                                }else {
+                                    setQuestionList(newQuestionList);
+                                }
+                                
                             }} appearance="outline">Delete</Button>
+                            <Button status='warning' style={{marginLeft:5}}onPress={()=>{
+                                let newQuestionList = [];
+                                _.map(questionList, (o, indX) => {
+                                    if(indX !== index) newQuestionList.push(o);
+                                    else newQuestionList.push({});
+                                })             
+                                setQuestionList([...newQuestionList]);                    
+                            }} appearance="outline">Reset</Button>
                         </View>
                 </Layout>)}
 

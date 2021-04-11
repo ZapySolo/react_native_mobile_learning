@@ -101,8 +101,11 @@ const ClassHome = (props) => {
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level="2" style={{flex: 1}}>
             <Header title={_.get(props, 'route.params.title', 'Classroom')} right={headerRight()} left={<Text onPress={()=>{props.navigation.openDrawer()}}>Drawer</Text>}/>
+            <View style={{padding:10}}>
+                <Text category='s1'>Today</Text>
+            </View>
             <List
-                style={[styles.container, {padding:10, flexGrow:1}]}
+                style={{padding:10, paddingBottom:0}}
                 data={dummyData.leactures}
                 ItemSeparatorComponent={() => <View style={{marginBottom:10}} />}
                 renderItem={({ item, index }) => (
@@ -119,7 +122,7 @@ const ClassHome = (props) => {
             <View style={{padding:10}}>
                 <Text category='s1'>POSTS</Text>
             </View>
-            <View>
+            <View style={{flexGrow:1}}>
                 <List
                     //style={{height:510}}
                     contentContainerStyle={styles.contentContainer}
