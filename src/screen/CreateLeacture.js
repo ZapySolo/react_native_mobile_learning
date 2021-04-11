@@ -119,7 +119,7 @@ const CreateLeacture = (props) => {
                             setLectureDetails({...lectureDetails, lectureType:'LIVE_CAMERA'});
                         }
                     }}>
-                    <Radio>Upload Video</Radio>
+                    <Radio>Upload Video Url</Radio>
                     <Radio disabled>Screen Sharing</Radio>
                     <Radio disabled>Live Camera Session</Radio>
                 </RadioGroup>
@@ -139,6 +139,9 @@ const CreateLeacture = (props) => {
                     onChange={index => {
                         if(index === 1){
                             setShowDatePicker(true);
+                        } else if(index === 0){
+                            setShowTimePicker(false);
+                            setShowDatePicker(false);
                         }
                         setSelectedLectureStartIndex(index)
                     }}>

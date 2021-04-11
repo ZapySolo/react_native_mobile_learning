@@ -1,10 +1,17 @@
 import React,{useState, useRef} from 'react';
 import * as eva from '@eva-design/eva';
 import { Layout, Text, Divider, List, ListItem, Icon, Button, Avatar, Card, Input, RadioGroup,Radio, RangeCalendar, SelectItem, Select } from '@ui-kitten/components';
-import { SafeAreaView, View, StyleSheet, ScrollView} from 'react-native';
+import { SafeAreaView, View, StyleSheet, ScrollView, BackHandler} from 'react-native';
 import Header from '../Header';
 import { Video, AVPlaybackStatus } from 'expo-av';
 import * as _ from 'lodash';
+// import YouTube from 'react-native-youtube';
+import YoutubePlayer from "react-native-youtube-iframe";
+
+import Repository from '../utilities/pouchDB';
+import { DNS } from 'react-native-uuid';
+let db = new Repository();
+
 const imageLink = 'https://source.unsplash.com/200x200';
 
 const data = [
@@ -19,10 +26,29 @@ const Leacture = (props) => {
     const [doubtButtonState, setDoubtButtonState] = useState(false);
     const video = React.useRef(null);
     const [status, setStatus] = React.useState({});
+    const [youtubePlaying, setYoutubePlaying] = React.useState(false);
+    
+    const [lectureDetails, setlectureDetails] = React.useState({});
 
     React.useEffect(() => {
-        console.log(data);
-    }, [props.route.params.item]);
+        fetchLectureDetails(_.get(props, 'route.params._id'))
+    }, [JSON.stringify(_.get(props, 'route.params'))]);
+
+    React.useEffect(() => {
+        BackHandler.addEventListener("hardwareBackPress", setYoutubePlaying(false));
+        return () =>
+          BackHandler.removeEventListener("hardwareBackPress", setYoutubePlaying(false));
+    }, []);
+
+    const fetchLectureDetails = async (lectureID) => {
+        if(lectureID){
+            let res = await db.findByID(lectureID);
+            if(res){
+                setlectureDetails(res);
+                setDoubtList(_.get(res, 'lectureDoubt', []));
+            }
+        }
+    }
 
     const renderItem = ({ item, index }) => (
         <ListItem
@@ -37,20 +63,30 @@ const Leacture = (props) => {
     return (
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level='3' style={{flex: 1}}>
-            <Header title={_.get(data, 'lectureDescription', 'Lecture')} left={<Text onPress={()=>{props.navigation.navigate("Home")}}>Back</Text>} right={null}/>
+            <Header title={_.get(data, 'lectureDescription', 'Lecture')} left={<Text onPress={()=>{
+                props.navigation.navigate("ClassHome");
+                setYoutubePlaying(false);
+                }}>Back</Text>} right={null}/>
             <View style={{width:'100%', backgroundColor:'black'}}>
-                <Video
-                    ref={video}
-                    style={{height:200}}
-                    source={{
-                        uri: 'http://techslides.com/demos/sample-videos/small.mp4',
-                    }}
-                    useNativeControls
-                    resizeMode="contain"
-                    isLooping
-                    onPlaybackStatusUpdate={status => setStatus(() => status)}
-                />
+                {/^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/.test(lectureDetails.videoLink)? <YoutubePlayer
+                    height={220}
+                    play={youtubePlaying}
+                    videoId={lectureDetails.videoLink.split(/v\/|v=|youtu\.be\//)[1].split(/[?&]/)[0]}
+                    //onChangeState={onStateChange}
+                /> : <Video
+                ref={video}
+                style={{height:200}}
+                source={{
+                    uri: lectureDetails.videoLink,
+                }}
+                useNativeControls
+                resizeMode="contain"
+                isLooping
+                onPlaybackStatusUpdate={status => setStatus(() => status)}
+            />}
+                
             </View>
+
             <View style={{justifyContent:'center', alignItems:'center'}}>
                 <View>
                     <Button onPress={()=>{setDoubtButtonState(!doubtButtonState)}} style={{margin:10}} status='primary'accessoryLeft={()=><Text>H</Text>}>
@@ -79,10 +115,18 @@ const Leacture = (props) => {
                         value={doubtText}
                         onChangeText={nextValue => setDoubtText(nextValue)}
                         />
-                    <Text onPress={()=>{
+                    <Text onPress={async ()=>{
                         if(doubtText !== ''){
-                            setDoubtList([...doubtList, {title:'You', description:doubtText}]);
+                            let newDoubtlist = [...doubtList, {title:'You', description:doubtText}]
+                            setDoubtList(newDoubtlist);
                             setDoubtText('');
+
+                            let res = await db.findByID(lectureDetails._id);
+                            console.log('findByID',res);
+                            if(res){
+                                res.lectureDoubt = newDoubtlist;
+                                await db.upsert(res);
+                            }
                         }
                     }} style={{padding:10}}>Send</Text>
                 </Layout>
