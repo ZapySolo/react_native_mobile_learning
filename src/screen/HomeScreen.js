@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import * as eva from '@eva-design/eva';
 import { Layout, Text, Divider, List, ListItem, Icon, Button, Avatar, Card} from '@ui-kitten/components';
 import { SafeAreaView, View, StyleSheet} from 'react-native';
 import Header from '../Header';
 import dummyData from '../dummyData.json';
 import Repository from '../utilities/pouchDB';
+import { useEffect } from 'react/cjs/react.development';
+import AsyncStorage from '@react-native-community/async-storage';
+import _ from 'lodash';
 let db = new Repository();
 
 const lectureData = [
@@ -48,38 +51,41 @@ const postData = [
 const imageLink = 'https://source.unsplash.com/200x200'; //https://source.unsplash.com/100x100/?face
 
 const HomeScreen = (props) => {
-    const renderItemAccessory = (props) => (
-        <Button size='tiny'>FOLLOW</Button>
-    );
+    const [clientProfile, setClientProfile] = useState({});
 
-     const renderItemHeader = (headerProps, info) => (
-        <View {...headerProps} style={{flexDirection:'row'}}>
-        <View style={{padding:10, paddingRight:0}}>
-            <Avatar size='tiny' source={{uri:imageLink+2+1}}/>
-        </View>
-        <View style={{flexGrow:1,padding:10, justifyContent:'center'}}>
-            <Text category='s1'> {info.item.title} </Text>
-        </View>
-        <View style={{padding:10, paddingRight:10, justifyContent:'center', flexDirection:'row', alignItems:'center'}}>
-            <Text category='label' style={{marginRight:5}}>{info.item.duration}</Text>
-            <Text category='label'>Edit</Text>
-        </View>
-    </View>
-    );
+    const getClientData = async () => {
+        try{
+            let result = await AsyncStorage.getItem('@client_profile');
+            result = JSON.parse(result)
+            if(result._id !== clientProfile._id){
+                setClientProfile(result);
+            }
+        } catch(err){
+            setClientProfile({});
+            console.log('Asyncstorage Error, ',err);
+        }
+    }
 
-     const renderItemFooter = (footerProps) => (
-        <View {...footerProps} style={{flexDirection:'row'}}>
-            <View style={{flex:1, justifyContentL:'center', alignItems:'center', padding:10}}><Text>View</Text></View>
-            <View style={{flex:1, justifyContentL:'center', alignItems:'center', padding:10, borderLeftWidth:1}}><Text>Quiz</Text></View>
-        </View>
-    );
+    const getData = async () => {
+        console.log('getting homepage data!');
+    }
+
+    useEffect(()=>{
+        getClientData();
+    },[JSON.stringify(clientProfile)]);
+
+    useEffect(()=>{
+        if(!(_.get(Object.keys(clientProfile), 'length', 0) === 0 && _.get(clientProfile, 'constructor') === Object)){
+            getData();
+        }
+    }, [clientProfile]);
 
     const calculateTimeRemm = (time) => {
         let currentTime = new Date().getTime();
         let calculateTime = new Date(time).getTime();
 
         let diff = calculateTime - currentTime;
-        console.log(`${calculateTime} - ${currentTime}`,diff);
+        //console.log(`${calculateTime} - ${currentTime}`,diff);
 
         if(diff <= -1000*60*60){
             return '--';
@@ -116,38 +122,6 @@ const HomeScreen = (props) => {
                         />
                 )}
                 />
-            {/* <View style={{padding:10, paddingBottom:0}}>
-                <Text category='s1'>POSTS</Text>
-            </View>
-            <View>
-                <List
-                    //style={{height:510}}
-                    contentContainerStyle={styles.contentContainer}
-                    data={postData}
-                    renderItem={(info) => (
-                        <Card
-                            style={styles.item}
-                            //status='basic'
-                            header={headerProps => renderItemHeader(headerProps, info)}
-                            footer={(info.item.type === 'QUIZ') ? renderItemFooter : null}
-                            disabled={info.item.type === 'POST'}
-                            onPress={()=>{
-                                if(info.item.type === 'TEST'){
-                                    props.navigation.navigate("Test")
-                                } else if (info.item.type === 'CREATE_TEST'){
-                                    props.navigation.navigate("Test")
-                                } else if (info.item.type === 'CREATE_LECTURE'){
-                                    props.navigation.navigate("Create Lecture")
-                                }
-                            }}
-                            >
-                            <Text>
-                                {info.item.description}
-                            </Text>
-                        </Card>
-                    )}
-                    />
-            </View> */}
         </Layout>
     </SafeAreaView>);
 }

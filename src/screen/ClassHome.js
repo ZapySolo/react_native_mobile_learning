@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import * as eva from '@eva-design/eva';
 import { Layout, Text, Divider, List, ListItem, Icon, Button, Avatar, Card,OverflowMenu,MenuItem } from '@ui-kitten/components';
 import { SafeAreaView, View, StyleSheet, Modal} from 'react-native';
@@ -23,15 +23,22 @@ const postData = [
 const imageLink = 'https://source.unsplash.com/200x200'; //https://source.unsplash.com/100x100/?face
 
 const ClassHome = (props) => {
-    const [userType, setUserType] = useState('TEACHER'); //STUDENT TEACHER
+    const [userType, setUserType] = useState(''); //STUDENT TEACHER
     //const [overflowMenu, setOverflowMenu] = useState(false); 
 
     const [overflowMenu, setOverflowMenu] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(null);
+    
+    const [classDetails, setClassDetails] = useState(_.get(props, 'route.params.data'));
 
-    const renderItemAccessory = (props) => (
-        <Button size='tiny'>FOLLOW</Button>
-    );
+    const handleDeleteClass = async () => {
+
+    }
+
+    useEffect(() => {
+        setClassDetails(_.get(props, 'route.params.data'));
+        setUserType(_.get(props, 'route.params.data.userType'));
+    }, [_.get(props, 'route.params.data')])
 
     const headerRight = () => {
         return (userType === 'TEACHER') 
@@ -53,6 +60,7 @@ const ClassHome = (props) => {
                 >
                 <MenuItem title='Create New Lecture'/>
                 <MenuItem title='Create New Test'/>
+                <MenuItem title='Delete Class'/>
                 <MenuItem disabled title='About'/>
             </OverflowMenu> 
         : <></>
@@ -100,7 +108,7 @@ const ClassHome = (props) => {
     return (
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level="2" style={{flex: 1}}>
-            <Header title={_.get(props, 'route.params.title', 'Classroom')} right={headerRight()} left={<Text onPress={()=>{props.navigation.openDrawer()}}>Drawer</Text>}/>
+            <Header title={_.get(classDetails, 'classTitle', 'Classroom')} right={headerRight()} left={<Text onPress={()=>{props.navigation.openDrawer()}}>Drawer</Text>}/>
             <View style={{padding:10}}>
                 <Text category='s1'>Today</Text>
             </View>
