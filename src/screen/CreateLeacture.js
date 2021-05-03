@@ -9,6 +9,7 @@ import CreateTestComponent from './CreateTestComponent';
 import * as _ from 'lodash';
 import moment from 'moment';
 import {v4 as uuid} from "uuid";
+import { Ionicons } from '@expo/vector-icons';
 
 import Repository from '../utilities/pouchDB';
 let db = new Repository();
@@ -47,7 +48,7 @@ const CreateLeacture = (props) => {
         lectureDoubt:[],
         quizQuestions:[],
         isDeleted:false,
-        created: new Date(),
+        created: new Date().toISOString(),
     }
     
     useEffect(() => {
@@ -79,7 +80,11 @@ const CreateLeacture = (props) => {
     return (
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level="3" style={{flex: 1}}>
-            <Header title="Create Leacture" left={<Text onPress={()=>{props.navigation.navigate("ClassHome")}}>{'< '}Back</Text>} right={null}/>
+            <Header title="Create Leacture" 
+            left={<Ionicons name="chevron-back" size={24} color="black" onPress={()=>{
+                props.navigation.goBack();
+            }}/>}
+            right={null}/>
             <ScrollView style={{flexGrow:1}}>
             <Layout level="1" style={{padding:10, margin:10, borderRadius:5}}>
                 <Input

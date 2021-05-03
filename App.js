@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-community/async-storage';
 import Settings from './src/screen/Settings';
 import _ from 'lodash';
 import {v4 as uuid} from "uuid";
-
+import { Ionicons } from '@expo/vector-icons';
 import CustomDrawer from './src/CustomDrawer';
 
 //import Login from './src/screen/Login';
@@ -51,8 +51,9 @@ export default function App() {
     let result = await AsyncStorage.getItem('@color_theme');
     if(!result){
       await AsyncStorage.setItem('@color_theme', 'LIGHT');
+      setToggleTheme(true);
     } else {
-      setToggleTheme(result === 'DARK' ? false : true);
+      setToggleTheme(result === 'LIGHT' ? true : false);
     }
   }
 
@@ -68,8 +69,49 @@ export default function App() {
 
   React.useEffect(() => {
     checkIfAlreadyLoggedIn();
-    checkForTheme()
+    checkForTheme();
+    checkIfDatabaseExist();
   }, []);
+
+  const checkIfDatabaseExist = async () => {
+    let result = await db.findMany({
+      _id: {
+        $regex: 'profile'
+      }
+    });
+    if(result.length === 0){
+      await db.destroy();
+      await db.upsertMany([{
+          _id: 'profile:6289c5fd-f671-4e83-989b-e28662981fd9',
+          username: 'Raj Surve',
+          password: {
+              salt: 'abc',
+              hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'
+          },
+          profileImageUrl: 'https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?f=y',
+          email: 'raj@gmail.com',
+          allowPushNotification: true,
+          allowEmailNotification: false,
+          type: 'USER',
+          isDeleted: false,
+          created: new Date().toISOString()
+      },{
+        _id: 'profile:6289c5fd-f671-4e83-989b-e23662981fd9',
+        username: 'Nikhil Patil',
+        password: {
+            salt: 'abc',
+            hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'
+        },
+        profileImageUrl: 'https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?f=y',
+        email: 'nikhil@gmail.com',
+        allowPushNotification: true,
+        allowEmailNotification: false,
+        type: 'USER',
+        isDeleted: false,
+        created: new Date().toISOString()
+      }]);
+    }
+  }
 
   const handleLogin = async () => {
     setLoginError(false);
@@ -79,24 +121,7 @@ export default function App() {
       Crypto.CryptoDigestAlgorithm.SHA256,
       loginPassword
     );
-
-    // console.log({email, password});
-    //   let upsertREs = await db.upsert({
-    //     _id: 'profile:6289c5fd-f671-4e83-989b-e23662981fd9',
-    //     username: 'Raj Surve',
-    //     password: {
-    //         salt: 'abc',
-    //         hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'
-    //     },
-    //     profileImageUrl: 'https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?f=y',
-    //     email: 'raj@gmail.com',
-    //     allowPushNotification: true,
-    //     allowEmailNotification: false,
-    //     type: 'USER',
-    //     isDeleted: false,
-    //     created: new Date().toISOString()
-    // });
-
+  
     let profileRes = await db.findMany({
       _id: {
         $regex: 'profile'
@@ -117,7 +142,6 @@ export default function App() {
       } catch(err) {
         console.log('error inside Async Storage: ',err);
       }
-      
     }
   }
 
@@ -205,7 +229,7 @@ export default function App() {
       : 
       <Layout level='3' style={{flex: 1, paddingTop:30}}>
         <View style={{flexGrow:1, justifyContent:'center', alignItems:'center'}}>
-            <Text category="h1">ML ICON</Text>
+            <Ionicons name="ios-book-outline" size={74} color={toggleTheme?"black":"white"} />
             <Text category="h1">Mobile App for</Text>
             <Text category="h1">Mobile Learning</Text>
             <Text category="h6">Creating new Modern Classes</Text>
@@ -216,7 +240,7 @@ export default function App() {
                 <View ><Input value={loginEmail} status={loginError?"danger":"basic"} onChangeText={o=>setLoginEmail(o)} size="large" placeholder="Enter your email"/></View>
                 <View style={{paddingTop:0}}><Input status={loginError?"danger":"basic"} value={loginPassword} onChangeText={o=>setLoginPassword(o)} secureTextEntry={true} size="large" placeholder="Enter your password" /></View>
                 <Button style={{marginTop:10}} onPress={()=>{handleLogin()}}>Login</Button>
-                <Button appearance="outline" style={{marginTop:10}} onPress={()=>{setLoginFormInput(false)}}>Back</Button>
+                <Button appearance="outline" style={{marginTop:10}} onPress={()=>{setLoginFormInput(false)}}>Go back</Button>
             </View>
             :<View style={{padding:10}}>
                 <View ><Input value={newCreateUsername} onChangeText={o=>setnewCreateUsername(o)} size="large" placeholder="Enter your username"/></View>
@@ -229,10 +253,10 @@ export default function App() {
           :<>
           <View>
               <View style={{alignItems:'center'}}>
-                  <Button disabled accessoryLeft={()=><Text>G</Text>} style={{width:'60%'}}> Sign in with Google </Button>
+                  <Button disabled accessoryLeft={()=><Ionicons name="logo-google" size={16} color="white" />} style={{width:'60%'}}> Sign in with Google </Button>
               </View>
               <View style={{alignItems:'center', marginTop:30}}>
-                  <Button accessoryLeft={()=><Text>ML</Text>} style={{width:'60%'}} onPress={()=>{setLoginFormInput('LOGIN')}}> Sign in with ML Account </Button>
+                  <Button accessoryLeft={()=><Ionicons name="ios-book-outline" size={16} color="white" />} style={{width:'60%'}} onPress={()=>{setLoginFormInput('LOGIN')}}> Sign in with ML Account </Button>
               </View>
               <View>
                 <Button appearance="ghost" onPress={()=>{setLoginFormInput('REGISTER')}} style={{marginTop:20}}>Create a ML Account</Button>
@@ -245,7 +269,7 @@ export default function App() {
               <Toggle style={{margin:5}} checked={toggleTheme} onChange={()=>setToggleTheme(!toggleTheme)} />
               <Text>Light</Text>
             </View>
-            <Text category="h6" appearance='hint'>Created By Pied Piper</Text>
+            <Text category="h6" appearance='hint'>Created By Group 1</Text>
         </View>
       </Layout>}
       </ApplicationProvider>

@@ -7,6 +7,8 @@ import {v4 as uuid} from "uuid";
 import AsyncStorage from '@react-native-community/async-storage';
 import Repository from '../utilities/pouchDB';
 import _ from 'lodash';
+import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 let db = new Repository();
 
 const windowWidth = Dimensions.get('window').width;
@@ -34,14 +36,13 @@ const CreateJoinClass = (props) => {
 
     const getClientData = async () => {
         try{
-            let result = await AsyncStorage.getItem('@client_profile');
-            setClientProfile(JSON.parse(result));
+            setClientProfile(JSON.parse(await AsyncStorage.getItem('@client_profile')));
         } catch(err){
             setClientProfile({});
             console.log('Asyncstorage Error, ',err);
         }
     }
-    const handleCrateClass = async () => {
+    const handleCreateClass = async () => {
         let validationResult = await validateNewClassDetails();
         if(validationResult){
             Keyboard.dismiss();
@@ -77,7 +78,7 @@ const CreateJoinClass = (props) => {
         });
         if(res.length > 0){
             let classx = _.cloneDeep(res[0]);
-            if(!_.includes(classx.students, clientProfile._id)){
+            if(classx.teacherID !== clientProfile._id && !_.includes(classx.students, clientProfile._id)){
                 classx.students.push(clientProfile._id);
                 console.log('joinNewClass: ', classx);
                 let upsrtRes = await db.upsert(classx);
@@ -98,7 +99,7 @@ const CreateJoinClass = (props) => {
                 }
             } else {
                 ToastAndroid.showWithGravityAndOffset(
-                    "You are already joined the class",
+                    "You already joined the class",
                     ToastAndroid.SHORT,
                     ToastAndroid.BOTTOM,
                     25, 50
@@ -129,7 +130,12 @@ const CreateJoinClass = (props) => {
     return (
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level="4" style={{flex: 1}}>
-            <Header title="Create/Join Class" left={<Text onPress={()=>{props.navigation.navigate("Home")}}>{'< '}Back</Text>} right={null}/>
+            <Header 
+                title="Create/Join Class" 
+                left={<Ionicons name="chevron-back" size={24} color="black" onPress={()=>{
+                    props.navigation.goBack();
+                }}/>}
+                right={null}/>
             <View style={{flexGrow:1, margin:10}}>
                 <Layout level="1" style={{padding:10, paddingBottom:20, borderRadius:5}}>
                     <View>
@@ -176,7 +182,7 @@ const CreateJoinClass = (props) => {
                             />
                     </View>
                     <View style={{marginTop:10}}>
-                        <Button onPress={()=>handleCrateClass()} >Create Class</Button>
+                        <Button onPress={()=>handleCreateClass()} >Create Class</Button>
                     </View>
                 </Layout>
             </View>
@@ -189,13 +195,16 @@ const CreateJoinClass = (props) => {
                     <Input
                         label='Class Code'
                         placeholder=''
+                        size="large"
                         value={joinNewClass}
                         onChangeText={o=>setJoinNewClass(o)}
                         style={{marginBottom:5, flexGrow:1, marginRight:5}}
                         status={joinNewClassError ? 'danger' : 'basic'}
                         caption={joinNewClassError ? 'Should contain only 5 characters' : ''}
                         />
-                    <Button onPress={()=>{
+                    <Button 
+                        accessoryLeft={()=><MaterialIcons name="add-link" size={22} color="white" />}
+                        onPress={()=>{
                         setJoinNewClassError(false);
                         if(typeof joinNewClass === 'string' && joinNewClass.length !== 5){
                             setJoinNewClassError(true);
@@ -203,7 +212,7 @@ const CreateJoinClass = (props) => {
                             handleJoinNewClass();
                             setJoinNewClassError(false);
                         }
-                    }} style={{height:40, width:40, marginBottom:9}}></Button>
+                    }} style={{ marginBottom:9}}></Button>
                 </View>
             </Layout>
             <Modal

@@ -8,49 +8,22 @@ import Repository from '../utilities/pouchDB';
 import { useEffect } from 'react/cjs/react.development';
 import AsyncStorage from '@react-native-community/async-storage';
 import _ from 'lodash';
+import moment from 'moment';
+
+import { FontAwesome,Entypo } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
+
 let db = new Repository();
 
-const lectureData = [
-    {
-        "_id": "lecture:abc",
-        "lectureDescription": "Module 1: Intro",
-        "lectureType": "",
-        "startTime": new Date(),
-        "attendanceBy": "QUIZ",
-        "classID": "class:abc",
-        "classTitle":"MIS",
-        "lectureDoubt":[]
-    }, {
-        "_id": "lecture:xyz",
-        "lectureDescription": "Module 1: Introduct",
-        "lectureType": "",
-        "startTime": new Date().getTime() + 1000*60*60, // getTime() + 59 min
-        "attendanceBy": "QUIZ",
-        "classID": "class:abc",
-        "classTitle":"BDA",
-        "lectureDoubt":[]
-    }, {
-        "_id": "lecture:xyz",
-        "lectureDescription": "Module 1: Introduction",
-        "lectureType": "",
-        "startTime": new Date().getTime() + 1000*60*60*25, // getTime() + 25 hrs
-        "attendanceBy": "QUIZ",
-        "classID": "class:abc",
-        "classTitle":"DSIP",
-        "lectureDoubt":[]
-    }
-];
-
-const imageLink = 'https://source.unsplash.com/200x200'; //https://source.unsplash.com/100x100/?face
-
 const HomeScreen = (props) => {
-    const [clientProfile, setClientProfile] = useState({});
+    const [clientProfile, setClientProfile] = useState(null);
+
+    const [lectureList, setlectureList] = useState([]);
 
     const getClientData = async () => {
         try{
-            let result = await AsyncStorage.getItem('@client_profile');
-            result = JSON.parse(result)
-            if(result._id !== clientProfile._id){
+            let result = JSON.parse(await AsyncStorage.getItem('@client_profile'))
+            if(result){
                 setClientProfile(result);
             }
         } catch(err){
@@ -59,70 +32,94 @@ const HomeScreen = (props) => {
         }
     }
 
-    const getData = async () => {
-        console.log('getting homepage data!');
-    }
-
-    React.useEffect(() => {
-        const unsubscribe = props.navigation.addListener('focus', () => {
-            getData();
-        });
-        return unsubscribe;
-    }, [props.navigation]);
-
     useEffect(()=>{
         getClientData();
     },[]);
 
     useEffect(()=>{
-        if(clientProfile){
-            getData();
+        if(clientProfile && clientProfile._id){
+            getData(clientProfile._id);
         }
-    },[clientProfile]);
+    }, [clientProfile]);
 
+    const getData = async (userID) => {
+        let listAsTeacher = await db.findMany({
+            _id: {
+                $regex: 'class'
+            },
+            teacherID: clientProfile._id
+        });
+        listAsTeacher = _.map(listAsTeacher, o => {return {...o, userType:'TEACHER'}});
+        let listAsStudent = await db.findMany({
+            _id: {
+                $regex: 'class'
+            },
+            students: { $all: [clientProfile._id] }
+        });
+        listAsStudent = _.map(listAsStudent, o => {return {...o, userType:'STUDENT'}});
+        let classList = _.uniqBy([...listAsTeacher,...listAsStudent], o => o._id);
+        console.log('classList',classList);
+        let data = [];
+        for(let classx of classList){
+            let res = await db.findMany({
+                _id: {
+                    $regex: 'lecture'
+                },
+                classID: classx._id
+            });
+            //console.log('red',res);
+            for(let osx of res){
+                data.push({
+                    ...osx,
+                    classProfileImage: classx.classProfileImage
+                });
+            }
+        }
+        data = _.sortBy(data, o => moment(o.startTime).valueOf());
+        console.log('data',data);
+        setlectureList(data);
+    }
+
+    
 
     const calculateTimeRemm = (time) => {
-        let currentTime = new Date().getTime();
-        let calculateTime = new Date(time).getTime();
+        var start_date = moment();
+        var end_date = moment(time);
+        var duration = moment.duration(end_date.diff(start_date)).asMinutes();
 
-        let diff = calculateTime - currentTime;
-        //console.log(`${calculateTime} - ${currentTime}`,diff);
-
-        if(diff <= -1000*60*60){
-            return '--';
-        } else if (diff <= 0){
+        if(duration <= 0){
             return 'ongoing';
-        } else if (diff <= 1000*60*60){
-            return parseInt(diff/(1000*60))+' min';
-        } else if (diff <= 1000*60*60*24){
-            return parseInt(diff/(1000*60*60))+' hr';
-        } else if (diff <= 1000*60*60*24*30){
-            return parseInt(diff/(1000*60*60*24))+' days';
-        } 
+        } else if (duration <= 60){
+            return parseInt(duration) + " min"
+        } else if (duration <= 60 * 60) {
+            return parseInt(duration)/60 + " hrs"
+        } else if (duration <= 60 * 60 * 24) {
+            return parseInt(duration)/60/24 + " days"
+        }
     }
 
     return (
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level="2" style={{flex: 1}}>
-            <Header title="Home Screen" left={<Text onPress={()=>{props.navigation.openDrawer()}}>Drawer</Text>}/>
-            <View style={{padding:10, paddingBottom:0}}>
+            <Header title="Home Screen" left={<FontAwesome onPress={()=>{props.navigation.openDrawer()}} name="bars" size={20} color="black" />}/>
+            {lectureList.length > 0 ?<View style={{padding:10, paddingBottom:0}}>
                 <Text category='s1'>Today</Text>
-            </View>
-            <List
+                <List
                 style={[styles.container, {padding:10, flexGrow:1}]}
-                data={lectureData}
+                data={lectureList}
                 ItemSeparatorComponent={() => <View style={{marginBottom:10}} />}
                 renderItem={({ item, index }) => (
                     <ListItem
                         onPress={()=>{props.navigation.navigate('Lecture', {...item})}}
                         style={{ borderRadius:5}}
-                        title={`${item.classTitle}`}
+                        title={`${item.lectureTitle}`}
                         description={`${item.lectureDescription}`}
-                        accessoryLeft={() => <Avatar size='medium' source={{uri:imageLink+2}}/>}
+                        accessoryLeft={() => <Avatar size='medium' source={{uri:item.classProfileImage}}/>}
                         accessoryRight={() => <Text category="label" appearance="hint">{calculateTimeRemm(item.startTime)}</Text>}
                         />
                 )}
                 />
+            </View>: <Text>Nothing to display</Text>}
         </Layout>
     </SafeAreaView>);
 }

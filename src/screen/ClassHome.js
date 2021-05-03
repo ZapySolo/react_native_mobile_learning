@@ -7,22 +7,11 @@ import dummyData from '../dummyData.json';
 import Repository from '../utilities/pouchDB';
 import * as _ from 'lodash';
 import moment from 'moment';
+import { FontAwesome,Entypo } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-community/async-storage';
 
 let db = new Repository();
-
-const data = [
-    { title: 'MIS', description: 'ongoing' },
-    { title: 'DIS', description: '2 hrs' },
-    { title: 'AUT', description: '4 hrs' },
-    { title: 'BII', description: '6 hrs' }
-];
-
-const postData = [
-    { title: 'Gore M', duration: '1 hrs', type:'POST', description:'Lecture has been conducted'},
-    { title: 'PK Swan', duration: '2 hrs', type:'TEST', description:'Give Test'},
-    { title: 'Austin', duration: '4 hrs', type:'CREATE_TEST', description:'Create Test'},
-    { title: 'Austin', duration: '4 hrs', type:'CREATE_LECTURE', description:'Create Lecture'},
-];
 
 const imageLink = 'https://source.unsplash.com/200x200'; //https://source.unsplash.com/100x100/?face
 
@@ -35,13 +24,26 @@ const ClassHome = (props) => {
     
     const [classDetails, setClassDetails] = useState(_.get(props, 'route.params.data'));
 
+    const [viewScore, setViewScore] = useState(null);
+
     const [lectures, setLectures] = useState([]);
+    const [posts, setPosts] = useState([]);
+
+    const [clientProfile, setClientProfile] = useState({});
 
     const handleDeleteClass = async () => {
         //<-- handle it here
     }
 
     const [refreshing, setRefreshing] = React.useState(false);
+
+    useEffect(()=>{
+        getClientData()
+    }, [])
+
+    const getClientData = async () => {
+        setClientProfile(JSON.parse(await AsyncStorage.getItem('@client_profile')));
+    }
 
     const onRefresh = React.useCallback(() => {
       setRefreshing(true);
@@ -50,7 +52,7 @@ const ClassHome = (props) => {
 
     const wait = (timeout) => {
         return new Promise(resolve =>  {
-            getLecturesData(classDetails._id);
+            getData(classDetails._id);
             resolve()
         });
     }
@@ -59,11 +61,12 @@ const ClassHome = (props) => {
         setClassDetails(_.get(props, 'route.params.data'));
         setUserType(_.get(props, 'route.params.data.userType'));
         if(_.get(props, 'route.params.data._id')){
-            getLecturesData(_.get(props, 'route.params.data._id'));
+            getData(_.get(props, 'route.params.data._id'));
         }
     }, [JSON.stringify(_.get(props, 'route.params.data', {}))])
 
-    const getLecturesData =  async (classID) => {
+    
+    const getData =  async (classID) => {
         let filter = {
             _id: {
                 $regex: 'lecture'
@@ -77,20 +80,29 @@ const ClassHome = (props) => {
         upcommingLecture = _.sortBy(upcommingLecture, o => moment(o.startTime).valueOf());
         setLectures(upcommingLecture);
 
-        console.log('upcommingLecture', _.map(upcommingLecture, o => {
-            return {
-                ...o,
-                startTime: moment(o.startTime).format('MMMM Do YYYY, h:mm a'),
-                endTime: moment(o.endTime).format('MMMM Do YYYY, h:mm a')
-            }
-        }))
+        let postFilter = {
+            _id: {
+                $regex: 'post'
+            },
+            classID
+        }
+        let postRes = await db.findMany(postFilter);
+        setPosts(postRes);
+        console.log('postRes',postRes);
+        // console.log('upcommingLecture', _.map(upcommingLecture, o => {
+        //     return {
+        //         ...o,
+        //         startTime: moment(o.startTime).format('MMMM Do YYYY, h:mm a'),
+        //         endTime: moment(o.endTime).format('MMMM Do YYYY, h:mm a')
+        //     }
+        // }));
         //console.log('upcommingLecture',upcommingLecture);
     }
     const headerRight = () => {
         return (userType === 'TEACHER') 
         ? 
             <OverflowMenu
-                anchor={()=><Button onPress={()=>{setOverflowMenu(true)}} appearance="ghost">:</Button>}
+                anchor={()=><Button onPress={()=>{setOverflowMenu(true)}} appearance="ghost"><Entypo name="dots-three-vertical" size={16} color="black" /></Button>}
                 visible={overflowMenu}
                 selectedIndex={selectedIndex}
                 onSelect={(val)=>{
@@ -99,7 +111,7 @@ const ClassHome = (props) => {
                     if(val.row === 0){
                         props.navigation.navigate("Create Lecture", {data:{...classDetails}});
                     } else if (val.row === 1){
-                        props.navigation.navigate("CreateTest");
+                        props.navigation.navigate("CreateTest", {data:{...classDetails}});
                     }
                 }}
                 onBackdropPress={() => setOverflowMenu(false)}
@@ -110,30 +122,8 @@ const ClassHome = (props) => {
                 <MenuItem disabled title='Stats'/>
                 <MenuItem disabled title='About'/>
             </OverflowMenu> 
-        : <></>
+        : <></>;
     }
-    
-     const renderItemHeader = (headerProps, info) => (
-        <View {...headerProps} style={{flexDirection:'row'}}>
-        <View style={{padding:10, paddingRight:0}}>
-            <Avatar size='tiny' source={{uri:imageLink}}/>
-        </View>
-        <View style={{flexGrow:1,padding:10, justifyContent:'center'}}>
-            <Text category='s1'> {info.item.title} </Text>
-        </View>
-        <View style={{padding:10, paddingRight:10, justifyContent:'center', flexDirection:'row', alignItems:'center'}}>
-            <Text category='label' style={{marginRight:5}}>{info.item.duration}</Text>
-            <Text category='label'>Edit</Text>
-        </View>
-    </View>
-    );
-
-     const renderItemFooter = (footerProps) => (
-        <View {...footerProps} style={{flexDirection:'row'}}>
-            <View style={{flex:1, justifyContentL:'center', alignItems:'center', padding:10}}><Text>View</Text></View>
-            <View style={{flex:1, justifyContentL:'center', alignItems:'center', padding:10, borderLeftWidth:1}}><Text>Quiz</Text></View>
-        </View>
-    );
 
     const calculateTimeRemm = (time) => {
         var start_date = moment();
@@ -145,9 +135,24 @@ const ClassHome = (props) => {
         } else if (duration <= 60){
             return parseInt(duration) + " min"
         } else if (duration <= 60 * 60) {
-            return parseInt(duration)/60 + " hrs"
+            return parseInt(duration/60) + " hrs"
         } else if (duration <= 60 * 60 * 24) {
-            return parseInt(duration)/60/24 + " days"
+            return parseInt(duration/60/24) + " days"
+        }
+    }
+
+    const calculateTimePassed = (time) => {
+        var currentDate = moment();
+        var creationDate = moment(time);
+        var duration = moment.duration(currentDate.diff(creationDate)).asMinutes();
+        if(duration <= 5){
+            return 'now';
+        } else if (duration <= 60){
+            return parseInt(duration) + " min"
+        } else if (duration <= 60 * 60) {
+            return parseInt(duration/60) + " hrs"
+        } else if (duration <=60 * 60 * 24) {
+            return parseInt(duration/60/24) + " days"
         }
     }
 
@@ -155,7 +160,8 @@ const ClassHome = (props) => {
     <SafeAreaView style={{ flex: 1 }}>
         
         <Layout level="2" style={{flex: 1}}>
-            <Header title={_.get(classDetails, 'classTitle', 'Classroom')} right={headerRight()} left={<Text onPress={()=>{props.navigation.openDrawer()}}>Drawer</Text>}/>
+            <Header title={_.get(classDetails, 'classTitle', 'Classroom')} right={headerRight()} left={<FontAwesome onPress={()=>{props.navigation.openDrawer()}} name="bars" size={20} color="black" />}/>
+            
             <ScrollView
                 contentContainerStyle={styles.scrollView}
                 refreshControl={
@@ -166,24 +172,29 @@ const ClassHome = (props) => {
                 }
             >
             <View>
-                <View style={{padding:10}}>
-                    <Text category='s1'>Today</Text>
-                </View>
-                <List
-                    style={{padding:10, paddingBottom:0}}
-                    data={lectures}
-                    ItemSeparatorComponent={() => <View style={{marginBottom:10}} />}
-                    renderItem={({ item, index }) => (
-                        <ListItem
-                            onPress={()=>{props.navigation.navigate('Lecture', {...item})}}
-                            style={{ borderRadius:5}}
-                            title={`${item.lectureTitle}`}
-                            description={`${item.lectureDescription}`}
-                            accessoryLeft={() => <Avatar size='medium' source={{uri:classDetails.classProfileImage}}/>}
-                            accessoryRight={() => <Text category="label" appearance="hint">{calculateTimeRemm(item.startTime)}</Text>}
-                            />
-                    )}
-                    />
+                {lectures.length > 0 ?<>
+                    <View style={{padding:10}}>
+                        <Text category='s1'>Today</Text>
+                    </View>
+                    <List
+                        style={{padding:10, paddingBottom:0}}
+                        data={lectures}
+                        ItemSeparatorComponent={() => <View style={{marginBottom:10}} />}
+                        renderItem={({ item, index }) => (
+                            <ListItem
+                                onPress={()=>{props.navigation.navigate('Lecture', {...item,userType})}}
+                                style={{ borderRadius:5}}
+                                title={`${item.lectureTitle}`}
+                                description={`${item.lectureDescription}`}
+                                accessoryLeft={() => <Avatar size='medium' source={{uri:classDetails.classProfileImage}}/>}
+                                accessoryRight={() => <Text category="label" appearance="hint">{calculateTimeRemm(item.startTime)}</Text>}
+                                />
+                        )}
+                        />
+                </>: <View style={{padding:10}}>
+                        <Text category='s1'>No Lectures Today</Text>
+                    </View>}
+                
                 <View style={{padding:10}}>
                     <Text category='s1'>POSTS</Text>
                 </View>
@@ -191,27 +202,48 @@ const ClassHome = (props) => {
                     <List
                         //style={{height:510}}
                         contentContainerStyle={styles.contentContainer}
-                        data={postData}
-                        renderItem={(info) => (
+                        data={posts}
+                        renderItem={({item}) => (
                             <Card
                                 style={styles.item}
-                                //status='basic'
-                                header={headerProps => renderItemHeader(headerProps, info)}
-                                footer={(info.item.type === 'QUIZ') ? renderItemFooter : null}
-                                disabled={info.item.type === 'POST'}
-                                onPress={()=>{
-                                    if(info.item.type === 'TEST'){
-                                        props.navigation.navigate("Test")
-                                    } else if (info.item.type === 'CREATE_TEST'){
-                                        props.navigation.navigate("Test")
-                                    } else if (info.item.type === 'CREATE_LECTURE'){
-                                        props.navigation.navigate("Create Lecture")
-                                    }
-                                }}
+                                status={userType === 'TEACHER'? '': _.find(item.quizResponse, o => o.studentID === clientProfile._id) ? 'success' : 'primary'}
+                                header={headerProps => 
+                                    <View {...headerProps} style={{flexDirection:'row'}}>
+                                        <View style={{padding:10, paddingRight:0}}>
+                                            <Avatar size='tiny' source={{uri:imageLink}}/>
+                                        </View>
+                                        <View style={{flexGrow:1,padding:10, justifyContent:'center'}}>
+                                            <Text category='s1'> {item.postTitle} </Text>
+                                        </View>
+                                        <View style={{padding:10, paddingRight:10, justifyContent:'center', flexDirection:'row', alignItems:'center'}}>
+                                            <Text category='label' style={{marginRight:5}}>{calculateTimePassed(item.created)}</Text>
+                                            {userType === 'TEACHER' && <Feather name="edit" size={12} color="black" />}
+                                        </View>
+                                    </View>}
+                                footer={userType !== 'TEACHER' ? () =>
+                                    <View style={{flexDirection:'row'}}>
+                                        <Button 
+                                            appearance="ghost" 
+                                            disabled={_.find(item.quizResponse, o => o.studentID === clientProfile._id) ? false : true} style={{flex:1}}
+                                            onPress={()=>{setViewScore(prev => prev === item._id ? null : item._id)}}
+                                            >View Score</Button>
+                                        <Button  style={{flex:1}} disabled={_.find(item.quizResponse, o => o.studentID === clientProfile._id) ? true : false}  appearance="ghost" onPress={()=>{
+                                            if(item.type === 'QUIZ'){
+                                                props.navigation.navigate("Test", {data:item})
+                                            }
+                                        }}>Quiz</Button>
+                                    </View> : null}
+                                disabled={item.type !== 'QUIZ'}
                                 >
-                                <Text>
-                                    {info.item.description}
-                                </Text>
+                                    <>
+                                        <Text>
+                                            {item.postDescription}
+                                        </Text>
+                                        {viewScore === item._id && <Text>
+                                            {`You have scored ${_.find(item.quizResponse, o => o.studentID === clientProfile._id).score}`}
+                                        </Text>}
+                                    </>
+                               
                             </Card>
                         )}
                         />

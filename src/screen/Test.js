@@ -6,98 +6,15 @@ import Header from '../Header';
 import { Dimensions } from 'react-native';
 import * as _ from 'lodash';
 import { map } from 'lodash';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-community/async-storage';
+
+import Repository from '../utilities/pouchDB';
+
+let db = new Repository();
+
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
-
-const quetions = [
-    {
-        _id:'question:1',
-      "answer": "Big Data Analysis",
-      "marks": "1",
-      "options": [],
-      "question": "Full form of BDA",
-      "questionType": "TEXT_INPUT",
-    },
-    {
-        _id:'question:2',
-      "marks": "1",
-      "options": [
-        {
-            _id:'option:1',
-          "isAnswer": true,
-          "text": "Big Data Analysis",
-        },
-        {
-            _id:'option:2',
-          "isAnswer": false,
-          "text": "Big Data Analytic",
-        },
-        {
-            _id:'option:3',
-          "isAnswer": false,
-          "text": "Business Data Analysis",
-        },
-        {
-            _id:'option:4',
-            "isAnswer": false,
-          "text": "Business Data Analytic",
-        },
-      ],
-      "question": "Full form of BDA",
-      "questionType": "RADIO_BUTTON",
-    }, {
-        _id:'question:3',
-      "marks": "1",
-      "options": [
-        {
-            _id:'option:112',
-          "isAnswer": true,
-          "text": "Big Data Analysis",
-        },
-        {
-            _id:'option:232',
-          "isAnswer": false,
-          "text": "Big Data Analytic",
-        },
-        {
-            _id:'option:343',
-          "isAnswer": false,
-          "text": "Business Data Analysis",
-        },
-        {
-            _id:'option:443',
-          "text": "Business Data Analytic",
-        },
-      ],
-      "question": "Full form of BDA",
-      "questionType": "RADIO_BUTTON",
-    },
-
-    {
-        _id:'question:4',
-      "marks": "1",
-      "options": [
-        {
-            _id:'option:5',
-          "isAnswer": true,
-          "text": "Option 1",
-        },
-        {
-            _id:'option:6',
-            "isAnswer": false,
-          "text": "Option 2",
-        },
-        {
-            _id:'option:7',
-          "isAnswer": true,
-          "text": "Option 3",
-        },
-      ],
-      "question": "Full form of BDA",
-      "questionType": "CHECKBOX",
-    },
-  ]
-console.log('quetions',quetions);
 
 const Test = (props) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -112,13 +29,55 @@ const Test = (props) => {
     const [selectedRadioIndex, setSelectedRadioIndex] = useState([]);
     const [selectedCheckIndex, setSelectedCheckIndex] = useState({});
 
+    const [quetions, setquetions] = useState([]);
+
     const [score, setScore] = useState(0);
 
+    const [postDetails, setPostDetails] = useState();
+
+    useEffect(() => {
+        const unsubscribe = props.navigation.addListener('focus', () => {
+            //
+            setScore(0);
+            setAnswers([]);
+            //setquetions([]);
+            console.log('Test Component Mounted!');
+            //
+        });
+        return unsubscribe;
+    }, [props.navigation]);
+
     useEffect(()=>{
-        console.log('answers',answers);
-    },[answers])
+        setPostDetails(_.get(props, 'route.params.data'));
+        console.log("_.get(props, 'route.params.data')",_.get(props, 'route.params.data'));
+        setquetions(_.get(props, 'route.params.data.quizQuestions'));
+    },[_.get(props, 'route.params.data')]);
+
+    const onPressModalConfirm = async () => {
+        setConfirmModal(false);
+        setSubmitSuccessModal(true);
+        let result = await db.findByID(postDetails._id);
+        let clientID = JSON.parse(await AsyncStorage.getItem('@client_profile'))._id;
+        let quizResponse = {
+            studentID: clientID,
+            response: answers,
+            score: score
+        }
+        console.log('result',result);
+        if(_.get(result, 'quizResponse', []).length <= 0){
+            result.quizResponse = [quizResponse]
+        } else {
+            if(!_.find(result.quizResponse, o => o.studentID === clientID)){
+                result.quizResponse = [...result.quizResponse, quizResponse];
+            } else {
+                console.log('You have already responded!');
+            }
+        }
+        await db.upsert(result);
+    }
 
     const checkAnswers = () => {
+        console.log('answers',answers);
         let score = 0;
         for(let ques of quetions){
             let ans = _.find(answers, o => o.questionID === ques._id);
@@ -154,7 +113,13 @@ const Test = (props) => {
     return (
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level='4' style={{flex: 1}}>
-            <Header title="BDA Test: Module 1" right={<View style={{alignItems:'center'}}><Text category="label" appearance="hint">Time</Text><Text>{testTimeRem}</Text></View>} left={<Text onPress={()=>{props.navigation.navigate("Home")}}>Back</Text>}/>
+            <Header 
+                title="BDA Test: Module 1" 
+                right={<View style={{alignItems:'center'}}><Text category="label" appearance="hint">Time</Text><Text>{testTimeRem}</Text></View>} 
+                left={<Ionicons name="chevron-back" size={24} color="black" onPress={()=>{
+                    props.navigation.goBack();
+                }}/>}
+                />
             <ScrollView style={{flexGrow:1}}>
 
             <View style={{padding:10}}>
@@ -192,7 +157,7 @@ const Test = (props) => {
                         return (<Layout level="1" title="Question 2" style={{marginTop:10, padding:10, borderRadius:5}}>
                         <Text category="s1" style={{marginBottom:5}}>{`Q${index+1}. ${value.question}`}</Text>
                         <Text category="s1" style={{marginBottom:5}} status='info'>Open File</Text>
-                        {_.map(value.options, (o, indX) => <CheckBox  style={{marginBottom:10, marginTop:5}}
+                        {_.map(value.options, (o, indX) => <CheckBox key={'CheckBox'+indX+index} style={{marginBottom:10, marginTop:5}}
                             checked={selectedCheckIndex[value._id+indX]}
                             onChange={nextChecked => {
                                 if(nextChecked === true){
@@ -264,28 +229,24 @@ const Test = (props) => {
             </View>
             <Modal
                 visible={confirmModal}
-                style={{flex:1}}
                 backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.5)'}}
-                onBackdropPress={() => setConfirmModal(false)}>
-                <View style={{ width:windowWidth, height:windowHeight, position:'relative'}}>
-                    <View style={{flexGrow:1}}></View>
-                    <Layout level="1" style={{justifyContent:'center', alignItems:"center", textAlign:'center', padding:30,position:'absolute', bottom:'-10%'}}>
-                        <View>
-                            <Text category="h5">You have Scored {score} Marks</Text>
-                            <Text category="h5">You have 2 Unattended ansers</Text>
-                            <Text category="h5">You Still have 2.21 mins left</Text>
+                //onBackdropPress={() => setConfirmModal(false)}
+                style={{width: '100%', height: '100%', marginTop: '10%'}}
+                >
+                <View style={{flexGrow:1}} onPress={() => setConfirmModal(false)}/>
+                <View style={{width:'100%', backgroundColor: 'red'}}>
+                    <Layout level="1" style={{justifyContent:'center', flexDirection:'column-reverse', alignItems:"center", textAlign:'center', padding:30, width: '100%'}}>
+                    
+                        <View style={{width: '100%'}}>
+                            <Text category="h5">You have {quetions.length - answers.length} Unattended ansers</Text>
+                            {_.has(postDetails, 'quizEndTime') && <Text category="h5">You Still have ... mins left</Text>}
                             <Text style={{marginBottom:40}} category="h4">Are You Sure You want to Submit?</Text>
                             <View style={{flexDirection:'row', justifyContent:'space-between'}}>
-                                <Button style={{width:'40%'}} appearance="outline" onPress={() => setConfirmModal(false)}>
-                                    Back
-                                </Button>
-                                <Button style={{width:'40%'}} onPress={() => {
-                                    console.log('answers',answers);
+                                <Button style={{width:'45%'}} appearance="outline" onPress={() => {
                                     setConfirmModal(false);
-                                    setSubmitSuccessModal(true);
-                                    setTimeout(()=>{
-                                        setSubmitSuccessModal(false);
-                                    },5000);
+                                    }}>Back</Button>
+                                <Button style={{width:'45%'}} onPress={() => {
+                                    onPressModalConfirm();
                                     }}>
                                     Submit
                                 </Button>
@@ -306,7 +267,12 @@ const Test = (props) => {
                     <Layout level="1"  style={{justifyContent:'center', alignItems:"center", textAlign:'center', padding:30, position:'absolute', bottom:'-10%', width:'100%'}}>
                         <View>
                             <Text category="h1" style={{padding:40, textAlign:'center'}}>Tick</Text>
-                            <Text category="h5">Test Successfully Submitted!</Text>      
+                            <Text category="h5" style={{textAlign:'center'}}>Test Successfully Submitted!</Text>      
+                            <Text category="h5" style={{textAlign:'center'}}>You have scored {score} Marks</Text>
+                            <Button style={{marginTop: 10}} appearance="outline" onPress={() => {
+                                    setSubmitSuccessModal(false);
+                                    props.navigation.goBack();
+                                    }}>Back to homescreen</Button>
                         </View>
                     </Layout>
                 </View>

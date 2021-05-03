@@ -5,6 +5,7 @@ import { Divider} from '@ui-kitten/components';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import AsyncStorage from '@react-native-community/async-storage';
 import _ from 'lodash';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { Layout, Input, Button, Text, Avatar, List, ListItem} from '@ui-kitten/components';
 import Repository from '../src/utilities/pouchDB';
@@ -87,15 +88,16 @@ export default CustomDrawer = (props) => {
           </View>
           <View style={{marginTop:30}}>
             <Button 
-              //accessoryRight={()=><Text>{'>'}</Text>}
+              accessoryRight={()=><MaterialIcons name="logout" size={12} color="#3366FF" />}
               appearance="ghost" 
               onPress={async()=>{
                 await AsyncStorage.setItem('@client_profile', '');
                 props.setLoggedIn(false)
-              }}>Logout {" >"}</Button>
+              }}>Logout</Button>
+              
           </View>
           <View style={{alignItems:"center", justifyContent:'flex-end', padding:15}}>
-              <Text category="s1" appearance='hint'>Created By Pied Piper</Text>
+              <Text category="s1" appearance='hint'>Created By Group 1</Text>
           </View>
         </Layout>
     )

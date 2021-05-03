@@ -6,6 +6,15 @@ import Header from '../Header';
 import { Dimensions } from 'react-native';
 import * as _ from 'lodash';
 import { xor } from 'lodash';
+import {v4 as uuid} from "uuid";
+import moment from 'moment';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
+
+import Repository from '../utilities/pouchDB';
+
+let db = new Repository();
+
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
 
@@ -17,34 +26,165 @@ const CreateTest = (props) => {
     const [confirmModal, setConfirmModal] = useState(false);
     const [submitSuccessModal, setSubmitSuccessModal] = useState(false);
 
-    /**
-     * _id: Joi.string().required(),
-        question: Joi.string().required(),
-        questionType: Joi.string().valid('STRING', 'IMAGE'),
-        answerType: Joi.string().valid('RADIO_BUTTON', 'FILE_UPLOAD', 'TEXT_INPUT', 'CHECKBOX'),
-        options: Joi.array().items({
-            _id: Joi.string().required(),
-            text: Joi.string().required(),
-            isAnswer: Joi.boolean().required()
-        }).optional(),
-     */
+    const [selectedLectureStartIndex, setSelectedLectureStartIndex] = useState(0);
+    const [selectedLectureEndIndex, setSelectedLectureEndIndex] = useState(0);
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [selectedTime, setSelectedTime] = useState(new Date());
 
-    const [questionList, setQuestionList] = useState([{}]);
+    const [questionList, setQuestionList] = useState([{_id:'question:'+uuid.v4()}]);
+
+    const [postObj, setPostObj] = useState({
+        _id:'post:'+uuid.v4(),
+        postTitle: '',
+        postDescription: 'New Test has been Assigned',
+        type: 'QUIZ',
+        quizStartTime: new Date().toISOString(),
+        quizEndTime: new Date().toISOString(),
+        quizResponse: [],
+        classID: _.get(props, 'route.params.data._id'),
+        quizQuestions:[],
+        isDeleted:false,
+        created: new Date().toISOString()
+    });
+
+    useEffect(() => {
+        const unsubscribe = props.navigation.addListener('focus', () => {
+            //
+            setPostObj(prev => {
+                return {
+                    ...prev,
+                    postTitle: '',
+                    postDescription: 'New Test has been Assigned',
+                    _id:'post:'+uuid.v4(),
+                    quizStartTime: new Date().toISOString(),
+                    quizEndTime: new Date().toISOString(),
+                    created: new Date().toISOString()
+                }
+            });
+            setQuestionList([{_id:'question:'+uuid.v4()}]);
+            //
+        });
+        return unsubscribe;
+    }, [props.navigation]);
 
     useEffect(()=>{
         if(questionList.length <= 0){
-            setQuestionList([{}]);
+            setQuestionList([{_id:'question:'+uuid.v4()}]);
         }
-    },[questionList])
+    },[questionList]);
+
+    const submitTest = async () => {
+        try{
+            let obj = {...postObj};
+            obj.quizQuestions = questionList;
+            if(selectedLectureStartIndex === 0){
+                delete obj.quizEndTime;
+            }
+            return await db.upsert(obj);
+        } catch (err){
+            console.log('error occurd while submitting test', err);
+            return null;
+        }
+    }
 
     return (
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level='4' style={{flex: 1}}>
-            <Header title="Create Test" left={<Text onPress={()=>{props.navigation.navigate("ClassHome")}}>Back</Text>}/>
+            <Header 
+                title="Create Test" 
+                left={<Ionicons name="chevron-back" size={24} color="black" onPress={()=>{
+                    props.navigation.goBack();
+                }}/>}
+            />
             <ScrollView style={{flexGrow:1}}>
 
             <View style={{padding:10}}>
                 <View style={{flexDirection:'row', justifyContent:'space-between'}}>
+                    <Text category="s2">Test Details</Text>
+                    <Text category="s2">{` `}</Text>
+                </View>
+                <Layout level="1" title="Question 3" style={{marginTop:10, padding:10, borderRadius:5}}>
+                    <Input
+                        label="Test Title"
+                        placeholder='Test Title here'
+                        value={postObj.postTitle}
+                        style={{marginBottom:5}}
+                        onChangeText={(title) => {
+                            setPostObj(prev => {
+                                return {
+                                    ...prev,
+                                    postTitle: title
+                                }
+                            })
+                        }}
+                    />
+                    <Input
+                        label="Test Description"
+                        placeholder='New Test has been Assigned'
+                        value={postObj.postDescription}
+                        style={{marginBottom:5}}
+                        onChangeText={(title) => {
+                            setPostObj(prev => {
+                                return {
+                                    ...prev,
+                                    postDescription: title
+                                }
+                            })
+                        }}
+                    />
+                     <Text category="label" appearance='hint'>Test End Time</Text>
+                    <RadioGroup
+                        //style={{marginBottom:5}}
+                        selectedIndex={selectedLectureStartIndex}
+                        onChange={index => {
+                            if(index === 1){
+                                setShowDatePicker(true);
+                            } else if(index === 0){
+                                setShowTimePicker(false);
+                                setShowDatePicker(false);
+                            }
+                            setSelectedLectureStartIndex(index)
+                        }}>
+                        <Radio>No</Radio>
+                        <Radio>Select Date & Time</Radio>
+                    </RadioGroup>
+                    {selectedLectureStartIndex === 1 && <Text style={{fontStyle:'italic'}}>{`Ends on: ${moment(postObj.quizEndTime).format('MMMM Do YYYY, h:mm a')}`}</Text>}
+
+                    {showDatePicker && <>
+                        <RangeCalendar
+                            style={{marginBottom:5}}
+                            value={new Date(selectedDate)}
+                            onSelect={({startDate}) => {
+                                console.log('startDate', startDate);
+                                setSelectedDate(new Date(startDate).getTime());
+                                setShowTimePicker(true);
+                                setShowDatePicker(false);
+                            }}
+                            />
+                    </>}
+
+                    {showTimePicker &&<>
+                        <DateTimePicker
+                            testID="dateTimePicker"
+                            value={selectedTime}
+                            mode={'time'}
+                            display="default"
+                            onChange={({nativeEvent})=>{
+                                let dateNow = new Date();
+                                let currentDayTimestamp = new Date(dateNow.getFullYear(), dateNow.getMonth(), dateNow.getDate()).getTime();
+                                let pickerTime = new Date(nativeEvent.timestamp).getTime();
+                                let diff = pickerTime - currentDayTimestamp;
+                                let newTime = moment(selectedDate + diff);
+                                setPostObj({...postObj, quizStartTime:newTime.toISOString(), quizEndTime:newTime.toISOString()});
+                                setSelectedLectureEndIndex(0);
+                                setShowTimePicker(false);
+                            }}/>
+                    </>}
+                </Layout>
+
+                <View style={{flexDirection:'row', justifyContent:'space-between', marginTop:10}}>
                     <Text category="s2">Test Questions</Text>
                     <Text category="s2">{`No of questions: ${questionList.length}`}</Text>
                 </View>
@@ -91,7 +231,7 @@ const CreateTest = (props) => {
                                     options: 
                                         questinTypeCode === 'RADIO_BUTTON' || questinTypeCode === 'CHECKBOX' 
                                         ? (_.get(question, 'options', []).length <= 0)
-                                            ? [{}] 
+                                            ? [{_id:'option:'+uuid.v4()}]
                                             : question.options 
                                         : []
                                 } : o;
@@ -165,7 +305,7 @@ const CreateTest = (props) => {
                             setQuestionList(_.map(questionList, (o, indX) => {
                                 return (index === indX) ? {
                                     ...o,
-                                    options: [...o.options, {}]
+                                    options: [...o.options, {_id:'option:'+uuid.v4()}]
                                 } : o;
                             }))
                         }}>Add Another Option</Button>}
@@ -177,7 +317,7 @@ const CreateTest = (props) => {
                                     if(indX !== index) newQuestionList.push(o);
                                 })
                                 if(newQuestionList.length <= 0){
-                                    setQuestionList([{}]);
+                                    setQuestionList([{_id:'question:'+uuid.v4()}]);
                                 }else {
                                     setQuestionList(newQuestionList);
                                 }
@@ -187,7 +327,7 @@ const CreateTest = (props) => {
                                 let newQuestionList = [];
                                 _.map(questionList, (o, indX) => {
                                     if(indX !== index) newQuestionList.push(o);
-                                    else newQuestionList.push({});
+                                    else newQuestionList.push({_id:'question:'+uuid.v4()});
                                 })             
                                 setQuestionList([...newQuestionList]);                    
                             }} appearance="outline">Reset</Button>
@@ -195,18 +335,33 @@ const CreateTest = (props) => {
                 </Layout>)}
 
             <Button appearance="ghost" onPress={()=>{
-                setQuestionList([...questionList, {options:[]}]);
+                setQuestionList([...questionList, {_id:'question:'+uuid.v4(), options:[]}]);
             }}>Add Another Queston +</Button>
 
             <View style={{justifyContent:'center', alignItems:'center', marginTop:10}}>
-                <Button onPress={()=>{
-                    console.log(questionList);
-                    setSubmitSuccessModal(true)
-                    setTimeout(()=>{
-                        setSubmitSuccessModal(false);
-                        //props.navigation.navigate('Home');
-                    },3000);
-                    }} disabled={false} style={styles.button} size='medium'> SUBMIT </Button>
+                <Button onPress={async ()=>{
+                    //console.log(questionList);
+                    let result  = await submitTest();
+                    if(result){
+                        setSubmitSuccessModal(true);
+                        setPostObj({
+                            _id:'post:'+uuid.v4(),
+                            postTitle: '',
+                            postDescription: 'New Test has been Assigned',
+                            type: 'QUIZ',
+                            quizStartTime: new Date().toISOString(),
+                            quizEndTime: new Date().toISOString(),
+                            classID: _.get(props, 'route.params.data._id'),
+                            quizQuestions:[],
+                            isDeleted:false,
+                            created: new Date().toISOString()
+                        });
+                        setQuestionList([{_id:'question:'+uuid.v4()}]);
+                        setTimeout(()=>{
+                            setSubmitSuccessModal(false);
+                        },3000);
+                    }
+                }} disabled={false} style={styles.button} size='medium'> SUBMIT </Button>
             </View>
 
         </View>

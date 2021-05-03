@@ -6,46 +6,72 @@ import Header from '../Header';
 import { Video, AVPlaybackStatus } from 'expo-av';
 import * as _ from 'lodash';
 // import YouTube from 'react-native-youtube';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-community/async-storage';
+
 import YoutubePlayer from "react-native-youtube-iframe";
 
 import Repository from '../utilities/pouchDB';
 import { DNS } from 'react-native-uuid';
+import { useEffect } from 'react';
 let db = new Repository();
 
 const imageLink = 'https://source.unsplash.com/200x200';
 
-const data = [
-    { title: 'Manisha Kode', description: 'Mam we dont have the formula for sin2T + cos2T' },
-    { title: 'Simran', description: 'Mam pleae give us the spreatsheet of formulas' },
-];
-
 const Leacture = (props) => {
     const [doubtText, setDoubtText] = useState('');
     //const [data, setData] = useState(props.route.params.item);
-    const [doubtList, setDoubtList] = useState(data);
+    const [doubtList, setDoubtList] = useState([]);
     const [doubtButtonState, setDoubtButtonState] = useState(false);
     const video = React.useRef(null);
     const [status, setStatus] = React.useState({});
-    const [youtubePlaying, setYoutubePlaying] = React.useState(false);
+    const [youtubePlaying, setYoutubePlaying] = React.useState(true);
     
-    const [lectureDetails, setlectureDetails] = React.useState({});
-
+    const [lectureDetails, setlectureDetails] = React.useState({}); 
+    const [clientProfile, setClientProfile] = useState({});
+    const getClientData = async () => {
+        setClientProfile(JSON.parse(await AsyncStorage.getItem('@client_profile')));
+    }
     React.useEffect(() => {
+        getClientData();
         fetchLectureDetails(_.get(props, 'route.params._id'))
     }, [JSON.stringify(_.get(props, 'route.params'))]);
 
-    React.useEffect(() => {
-        BackHandler.addEventListener("hardwareBackPress", setYoutubePlaying(false));
-        return () =>
-          BackHandler.removeEventListener("hardwareBackPress", setYoutubePlaying(false));
-    }, []);
+    // React.useEffect(() => {
+    //     BackHandler.addEventListener("hardwareBackPress", setYoutubePlaying(false));
+    //     return () =>
+    //       BackHandler.removeEventListener("hardwareBackPress", setYoutubePlaying(false));
+    // }, []);
+
+    useEffect(()=>{
+        console.log("_.get(props, 'route.params')",_.get(props, 'route.params'));
+        if(_.get(props, 'route.params.userType') !== 'TEACHER'){
+            setDoubtButtonState(true);
+        }
+    },[])
 
     const fetchLectureDetails = async (lectureID) => {
         if(lectureID){
             let res = await db.findByID(lectureID);
             if(res){
                 setlectureDetails(res);
-                setDoubtList(_.get(res, 'lectureDoubt', []));
+                let data = [];
+                for (let o of _.get(res, 'lectureDoubt', [])){
+                    if(o.userID === clientProfile._id){
+                        data.push({
+                            ...o,
+                            title: 'You'
+                        });
+                    } else {
+                        let otherUserProfile = await db.findByID(o.userID);
+                        data.push({
+                            ...o,
+                            title: _.get(otherUserProfile, 'username', '')
+                        });
+                    }
+                }
+                console.log('created doubt ',data);
+                setDoubtList(data);
             }
         }
     }
@@ -63,16 +89,21 @@ const Leacture = (props) => {
     return (
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level='3' style={{flex: 1}}>
-            <Header title={_.get(data, 'lectureDescription', 'Lecture')} left={<Text onPress={()=>{
-                props.navigation.navigate("ClassHome");
-                setYoutubePlaying(false);
-                }}>Back</Text>} right={null}/>
+            <Header 
+                title={ _.get(props, 'route.params.lectureDescription', 'Lecture')} 
+                left={<Ionicons name="chevron-back" size={24} color="black" onPress={()=>{
+                    setYoutubePlaying(false);
+                    props.navigation.goBack();
+                }}/>}
+                right={null}/>
             <View style={{width:'100%', backgroundColor:'black'}}>
                 {/^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/.test(lectureDetails.videoLink)? <YoutubePlayer
                     height={220}
                     play={youtubePlaying}
                     videoId={lectureDetails.videoLink.split(/v\/|v=|youtu\.be\//)[1].split(/[?&]/)[0]}
-                    //onChangeState={onStateChange}
+                    onChangeState={e => {
+                        console.log(e);
+                    }}
                 /> : <Video
                 ref={video}
                 style={{height:200}}
@@ -87,14 +118,14 @@ const Leacture = (props) => {
                 
             </View>
 
-            <View style={{justifyContent:'center', alignItems:'center'}}>
+           {_.get(props, 'route.params.userType') !== 'TEACHER' && <View style={{justifyContent:'center', alignItems:'center'}}>
                 <View>
-                    <Button onPress={()=>{setDoubtButtonState(!doubtButtonState)}} style={{margin:10}} status='primary'accessoryLeft={()=><Text>H</Text>}>
+                    <Button onPress={()=>{setDoubtButtonState(!doubtButtonState)}} style={{margin:10, marginBottom: 0}} status='primary'accessoryLeft={()=><Text>H</Text>}>
                         Raise Doubt
                     </Button>
                 </View>
-            </View>
-            <View style={{paddingLeft:10}}>
+            </View>}
+            <View style={{paddingLeft:10, marginTop: 10}}>
                 <Text category="s1" >Other Students Doubt</Text>
             </View>
             <View style={{flexGrow:1, marginTop:10}}>
@@ -117,14 +148,19 @@ const Leacture = (props) => {
                         />
                     <Text onPress={async ()=>{
                         if(doubtText !== ''){
-                            let newDoubtlist = [...doubtList, {title:'You', description:doubtText}]
+                            let newDoubtlist = [...doubtList, {title:'You', description:doubtText, userID: clientProfile._id}]
                             setDoubtList(newDoubtlist);
                             setDoubtText('');
 
                             let res = await db.findByID(lectureDetails._id);
                             console.log('findByID',res);
                             if(res){
-                                res.lectureDoubt = newDoubtlist;
+                                res.lectureDoubt = _.map(newDoubtlist, o => {
+                                    return {
+                                        description: o.description,
+                                        userID: o.userID
+                                    }
+                                });
                                 await db.upsert(res);
                             }
                         }
