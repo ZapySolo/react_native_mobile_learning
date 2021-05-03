@@ -3,10 +3,10 @@ import PouchFind from 'pouchdb-find';
 import uuid from 'react-native-uuid';
 import {get, set, pick, unset } from 'lodash';
 import {ToastAndroid} from 'react-native';
-// import PouchAuth from 'pouchdb-authentication';
+import PouchAuth from 'pouchdb-authentication';
 
 PouchDB.plugin(PouchFind);
-// PouchDB.plugin(PouchAuth);
+PouchDB.plugin(PouchAuth);
 
 class Options {
 
@@ -37,12 +37,13 @@ class Options {
 }
 
 class Repository {
-    //'https://nikhil:12345678@127.0.0.1:5984/test'
-    constructor(dbName ='mobile_learning', remoteUrl = 'http://127.0.0.1:5984/test', options = {}, pouchPlugin) {
+    //'https://nikhil:password@127.0.0.1:5984/test2'
+    constructor(dbName ='mobile_learning', remoteUrl = 'https://nikhil:password@127.0.0.1:5984/test2', options = {}, pouchPlugin) {
         this.dbName = dbName;
         if (pouchPlugin) PouchDB.plugin(pouchPlugin);
+
         this.db = new PouchDB('mobile_learning');
-        //this.db.sync(new PouchDB(remoteUrl, {live:true, retry:true}));
+  
         this.createIndex = (fields) => {
             return new Promise((resolve, reject) => {
                 this.db.createIndex({ index: { fields } })
@@ -218,18 +219,14 @@ class Repository {
                     }));
             });
         }
-
+        
         this.sync = () => {
-            return false;
-            return new Promise((resolve, reject) => {
-                console.log(`${remoteUrl}/${dbName}/`);
-                this.db.sync(`${remoteUrl}/${dbName}/`)
-                    .then((results) => resolve(results))
-                    .catch((error) => reject({
-                        error: `Could not sync with remote database`,
-                        dbError: error
-                    }))
-            });
+            // return new Promise((resolve, reject) => {
+            //     this.remoteDb = new PouchDB('https://127.0.0.1:5984/test2', {skip_setup: true});
+            //     this.remoteDb.logIn('nikhil', 'password').then(function (batman) {
+            //         console.log("I'm Batman.", batman);
+            //     });
+            // });
         }
 
         this.close = () => {

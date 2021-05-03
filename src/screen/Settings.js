@@ -6,6 +6,12 @@ import Header from '../Header';
 import AsyncStorage from '@react-native-community/async-storage';
 import Repository from '../utilities/pouchDB';
 import { Ionicons } from '@expo/vector-icons';
+// import { DocumentPicker, ImagePicker } from 'expo';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+
+import S3 from '../utilities/aws/s3';
+let s3 = new S3();
 
 let db = new Repository();
 
@@ -14,6 +20,8 @@ const Settings = (props) => {
     const [clientProfile, setClientProfile] = useState(null);
 
     const [notificationState, setNotificationState] = useState(false);
+
+    const [imageUri, setImageUri] = useState(null);
 
     const onCheckedChange = (isChecked) => {
         setNotificationState(isChecked);
@@ -52,10 +60,33 @@ const Settings = (props) => {
                 }}/>}
                 right={null}/>
             <ListItem
-                disabled
+                onPress={async()=>{
+                    let result = await ImagePicker.launchImageLibraryAsync({
+                        allowsEditing: true,
+                        aspect: [3, 3],
+                    });
+                    if (!result.cancelled) {
+                        let filename = result.uri.split('/').pop();
+                        setImageUri(result.uri);
+                        let filter = {
+                            uri: result.uri,
+                            name: filename,
+                            type: result.type+'/'+filename.split('.').pop()
+                        }
+                        console.log('filter', filter);
+                        await s3.uploadFile(filter);
+                        //let file = await FileSystem.getInfoAsync(result.uri);
+                        //await s3.uploadFile(file);
+                    }
+
+                    console.log('ImagePicker',result)
+                }}
                 style={{minHeight:70, paddingLeft:15,paddingRight:15, marginTop:2}}
+                accessoryRight={()=>{
+                    return (imageUri) ?  <Avatar size='medium' source={{uri:imageUri}}/> : <></>;
+                }}
                 description={()=><View>
-                    <Text category='s1' appearance="hint">{'Update Photo'}</Text>
+                    <Text category='s1' >{'Update Photo'}</Text>
                 </View>}
             />
             <Divider />
@@ -102,6 +133,17 @@ const Settings = (props) => {
                 style={{minHeight:70, paddingLeft:15,paddingRight:15}}
                 description={()=><View>
                     <Text category='s1' appearance="hint" >{'Software Information'}</Text>
+                </View>}
+            />
+            <Divider />
+            <ListItem
+                disabled
+                style={{minHeight:70, paddingLeft:15,paddingRight:15}}
+                description={()=><View>
+                    <Button onPress={async()=>{
+                        let result = await db.sync();
+                        console.log('sync result',result);
+                    }}>Sync</Button>
                 </View>}
             />
             <Divider />
