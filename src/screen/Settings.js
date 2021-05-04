@@ -23,7 +23,11 @@ const Settings = (props) => {
 
     const [imageUri, setImageUri] = useState(null);
 
-    const onCheckedChange = (isChecked) => {
+    const onCheckedChange = async (isChecked) => {
+        let user = JSON.parse(await AsyncStorage.getItem('@client_profile'));
+        let clientProfile = await db.findByID(user._id);
+        clientProfile.allowPushNotification = isChecked;
+        await db.upsert(clientProfile);
         setNotificationState(isChecked);
     }
 
@@ -32,11 +36,6 @@ const Settings = (props) => {
     }, []);
 
     const showToast = (text) => {
-        // ToastAndroid.showWithGravity(
-        //     "All Your Base Are Belong To Us",
-        //     ToastAndroid.SHORT,
-        //     ToastAndroid.CENTER
-        //     );
         ToastAndroid.showWithGravityAndOffset(
             text,
             ToastAndroid.LONG,
@@ -45,10 +44,55 @@ const Settings = (props) => {
             50
         );
     };
+
     const getClientData = async () => {
         let user = JSON.parse(await AsyncStorage.getItem('@client_profile'));
-        setClientProfile(user);
-        setChangeName(user.username);
+        let clientProfile = await db.findByID(user._id);
+        setClientProfile(clientProfile);
+        setChangeName(clientProfile.username);
+        setNotificationState(clientProfile.allowPushNotification);
+    }
+
+    const handleProfileImageUpload = async () => {
+        let imageUploadResult = await s3.uploadProfilePhoto();
+        console.log('imageUploadResult',imageUploadResult);
+        if(imageUploadResult && imageUploadResult.postResponse){
+            let profileImageUrl = imageUploadResult.postResponse.location;
+            let userID = JSON.parse(await AsyncStorage.getItem('@client_profile'));
+            userID = userID._id;
+            let userProfileResult = await db.findByID(userID);
+            userProfileResult.profileImageUrl = profileImageUrl
+            await db.upsert(userProfileResult);
+            setImageUri(profileImageUrl);
+        }
+    }
+
+    const handleUserNameChange = async (newName) => {
+        let resule = await db.findByID(clientProfile._id);
+        resule.username = newName;
+        console.log('resule',resule);
+        let res = await db.upsert(resule);
+        setChangeName(newName);
+        if(res){
+            await AsyncStorage.setItem('@client_profile', JSON.stringify(resule));
+            showToast('Name Changed Successfully!')
+        } else {
+            showToast('Error Occured while Changing usernme')
+        }
+    }
+
+    const UserNameInput = (props) => {
+        const [newChangeName, setNewChangeName] = useState(props.username); 
+        return <Input
+            value={newChangeName}
+            //placeholder="Enter your name"
+            onBlur={()=>{
+                handleUserNameChange(newChangeName)
+            }}
+            onChangeText={e => {
+                setNewChangeName(e);
+            }}
+        />
     }
 
     return (
@@ -60,27 +104,7 @@ const Settings = (props) => {
                 }}/>}
                 right={null}/>
             <ListItem
-                onPress={async()=>{
-                    let result = await ImagePicker.launchImageLibraryAsync({
-                        allowsEditing: true,
-                        aspect: [3, 3],
-                    });
-                    if (!result.cancelled) {
-                        let filename = result.uri.split('/').pop();
-                        setImageUri(result.uri);
-                        let filter = {
-                            uri: result.uri,
-                            name: filename,
-                            type: result.type+'/'+filename.split('.').pop()
-                        }
-                        console.log('filter', filter);
-                        await s3.uploadFile(filter);
-                        //let file = await FileSystem.getInfoAsync(result.uri);
-                        //await s3.uploadFile(file);
-                    }
-
-                    console.log('ImagePicker',result)
-                }}
+                onPress={() => handleProfileImageUpload()}
                 style={{minHeight:70, paddingLeft:15,paddingRight:15, marginTop:2}}
                 accessoryRight={()=>{
                     return (imageUri) ?  <Avatar size='medium' source={{uri:imageUri}}/> : <></>;
@@ -95,18 +119,7 @@ const Settings = (props) => {
                 description={()=><View>
                     <Text category='s1' >{'Change Name'}</Text>
                 </View>}
-                accessoryRight={() => <Input onBlur={async()=>{
-                    let resule = await db.findByID(clientProfile._id);
-                    resule.username = changeName;
-                    let res = await db.upsert(resule);
-                    if(res){
-                        await AsyncStorage.setItem('@client_profile', JSON.stringify(resule));
-                        showToast('Name Changed Successfully!')
-                    } else {
-                        showToast('Error Occured while Changing usernme')
-                    }
-                    
-                }} >{changeName}</Input>}
+                accessoryRight={() => <UserNameInput username={changeName} />}
             />
             <Divider />
             <ListItem
@@ -133,17 +146,6 @@ const Settings = (props) => {
                 style={{minHeight:70, paddingLeft:15,paddingRight:15}}
                 description={()=><View>
                     <Text category='s1' appearance="hint" >{'Software Information'}</Text>
-                </View>}
-            />
-            <Divider />
-            <ListItem
-                disabled
-                style={{minHeight:70, paddingLeft:15,paddingRight:15}}
-                description={()=><View>
-                    <Button onPress={async()=>{
-                        let result = await db.sync();
-                        console.log('sync result',result);
-                    }}>Sync</Button>
                 </View>}
             />
             <Divider />

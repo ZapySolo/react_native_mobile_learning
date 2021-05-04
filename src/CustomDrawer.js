@@ -31,7 +31,8 @@ export default CustomDrawer = (props) => {
     const getUserProfile = async () => {
       let res = JSON.parse(await AsyncStorage.getItem('@client_profile'))
       if(res){
-        setClientProfile(res);
+        let clientProfile = await db.findByID(res._id);
+        setClientProfile(clientProfile);
       } else {
         console.log('no profile found!');
       }

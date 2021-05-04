@@ -35,6 +35,7 @@
 // export default S3;
 // // export { Options };
 
+import * as ImagePicker from 'expo-image-picker';
 
 import { RNS3 } from 'react-native-aws3';
 const awsConfig = require('../../../config.js');
@@ -63,6 +64,38 @@ export default class s3 {
                         }
                     });
             });            
+        }
+
+        this.uploadProfilePhoto = async () => {
+            return new Promise(async(resolve, reject) => {
+                let image = await ImagePicker.launchImageLibraryAsync({
+                    allowsEditing: true,
+                    aspect: [3, 3],
+                });
+
+                if (!image.cancelled) {
+                    let filename = image.uri.split('/').pop();
+                    let filter = {
+                        uri: image.uri,
+                        name: filename,
+                        type: image.type+'/'+filename.split('.').pop()
+                    }
+                    RNS3.put(filter, {...this.options, keyPrefix: 'profile/'})
+                        .then(response => {
+                            console.log('response',response);
+                            if (response.status !== 201){
+                                reject("Failed to upload image to S3");
+                            } else {
+                                resolve(response.body);
+                            }
+                        })
+                        .catch(err => {
+                            reject('RNS3 File upload error!');
+                        })
+                } else {
+                    reject('ImagePicker Error!');
+                }
+            });
         }
     }
 }

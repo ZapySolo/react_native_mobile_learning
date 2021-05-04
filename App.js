@@ -13,7 +13,7 @@ import _ from 'lodash';
 import {v4 as uuid} from "uuid";
 import { Ionicons } from '@expo/vector-icons';
 import CustomDrawer from './src/CustomDrawer';
-
+import {AppDataProvider} from './src/AppContex';
 //import Login from './src/screen/Login';
 // // import { EvaIconsPack } from '@ui-kitten/eva-icons'; //<-- NOT WORKING
 
@@ -210,68 +210,70 @@ export default function App() {
 
   return (
     <ApplicationProvider {...eva} theme={toggleTheme?eva.light:eva.dark}>
-      {loggedIn
-      ?
-        <NavigationContainer>
-          <Drawer.Navigator 
-            drawerContent={(props) => <CustomDrawer clientProfile={clientProfile} setLoggedIn={setLoggedIn} {...props}/>}
-            initialRouteName="Login">
-            <Drawer.Screen name="Home" component={HomeScreen} />
-            <Drawer.Screen name="Create Lecture" component={CreateLeacture} />
-            <Drawer.Screen name="Lecture" component={Lecture} />
-            <Drawer.Screen name="Test" component={Test} />
-            <Drawer.Screen name="Settings" component={Settings} />
-            <Drawer.Screen name="CreateJoinClass" component={CreateJoinClass} />
-            <Drawer.Screen name="ClassHome" component={ClassHome} />
-            <Drawer.Screen name="CreateTest" component={CreateTest} />
-          </Drawer.Navigator>
-        </NavigationContainer>
-      : 
-      <Layout level='3' style={{flex: 1, paddingTop:30}}>
-        <View style={{flexGrow:1, justifyContent:'center', alignItems:'center'}}>
-            <Ionicons name="ios-book-outline" size={74} color={toggleTheme?"black":"white"} />
-            <Text category="h1">Mobile App for</Text>
-            <Text category="h1">Mobile Learning</Text>
-            <Text category="h6">Creating new Modern Classes</Text>
-        </View>
-        {loginFormInput === 'LOGIN' || loginFormInput === 'REGISTER' ? <>
-          {loginFormInput === 'LOGIN' ? 
-            <View style={{padding:10}}>
-                <View ><Input value={loginEmail} status={loginError?"danger":"basic"} onChangeText={o=>setLoginEmail(o)} size="large" placeholder="Enter your email"/></View>
-                <View style={{paddingTop:0}}><Input status={loginError?"danger":"basic"} value={loginPassword} onChangeText={o=>setLoginPassword(o)} secureTextEntry={true} size="large" placeholder="Enter your password" /></View>
-                <Button style={{marginTop:10}} onPress={()=>{handleLogin()}}>Login</Button>
-                <Button appearance="outline" style={{marginTop:10}} onPress={()=>{setLoginFormInput(false)}}>Go back</Button>
+      <AppDataProvider activeUserID={clientProfile && clientProfile._id ? clientProfile._id : null}>
+        {loggedIn
+        ?
+          <NavigationContainer>
+            <Drawer.Navigator 
+              drawerContent={(props) => <CustomDrawer clientProfile={clientProfile} setLoggedIn={setLoggedIn} {...props}/>}
+              initialRouteName="Login">
+              <Drawer.Screen name="Home" component={HomeScreen} />
+              <Drawer.Screen name="Create Lecture" component={CreateLeacture} />
+              <Drawer.Screen name="Lecture" component={Lecture} />
+              <Drawer.Screen name="Test" component={Test} />
+              <Drawer.Screen name="Settings" component={Settings} />
+              <Drawer.Screen name="CreateJoinClass" component={CreateJoinClass} />
+              <Drawer.Screen name="ClassHome" component={ClassHome} />
+              <Drawer.Screen name="CreateTest" component={CreateTest} />
+            </Drawer.Navigator>
+          </NavigationContainer>
+        : 
+          <Layout level='3' style={{flex: 1, paddingTop:30}}>
+            <View style={{flexGrow:1, justifyContent:'center', alignItems:'center'}}>
+                <Ionicons name="ios-book-outline" size={74} color={toggleTheme?"black":"white"} />
+                <Text category="h1">Mobile App for</Text>
+                <Text category="h1">Mobile Learning</Text>
+                <Text category="h6">Creating new Modern Classes</Text>
             </View>
-            :<View style={{padding:10}}>
-                <View ><Input value={newCreateUsername} onChangeText={o=>setnewCreateUsername(o)} size="large" placeholder="Enter your username"/></View>
-                <View ><Input value={newCreateEmail} onChangeText={o=>setnewCreateEmail(o)} size="large" placeholder="Enter your email"/></View>
-                <View style={{paddingTop:0}}><Input value={newCreatePassword} onChangeText={o=>setnewCreatePassword(o)} secureTextEntry={true} size="large" placeholder="Enter your password" /></View>
-                <Button style={{marginTop:10}} onPress={()=>{handleCreateNewUser()}}>Create Account</Button>
-                <Button appearance="outline" style={{marginTop:10}} onPress={()=>{setLoginFormInput(false)}}>Back</Button>
-            </View>}
-          </>
-          :<>
-          <View>
-              <View style={{alignItems:'center'}}>
-                  <Button disabled accessoryLeft={()=><Ionicons name="logo-google" size={16} color="white" />} style={{width:'60%'}}> Sign in with Google </Button>
-              </View>
-              <View style={{alignItems:'center', marginTop:30}}>
-                  <Button accessoryLeft={()=><Ionicons name="ios-book-outline" size={16} color="white" />} style={{width:'60%'}} onPress={()=>{setLoginFormInput('LOGIN')}}> Sign in with ML Account </Button>
-              </View>
+            {loginFormInput === 'LOGIN' || loginFormInput === 'REGISTER' ? <>
+              {loginFormInput === 'LOGIN' ? 
+                <View style={{padding:10}}>
+                    <View ><Input value={loginEmail} status={loginError?"danger":"basic"} onChangeText={o=>setLoginEmail(o)} size="large" placeholder="Enter your email"/></View>
+                    <View style={{paddingTop:0}}><Input status={loginError?"danger":"basic"} value={loginPassword} onChangeText={o=>setLoginPassword(o)} secureTextEntry={true} size="large" placeholder="Enter your password" /></View>
+                    <Button style={{marginTop:10}} onPress={()=>{handleLogin()}}>Login</Button>
+                    <Button appearance="outline" style={{marginTop:10}} onPress={()=>{setLoginFormInput(false)}}>Go back</Button>
+                </View>
+                :<View style={{padding:10}}>
+                    <View ><Input value={newCreateUsername} onChangeText={o=>setnewCreateUsername(o)} size="large" placeholder="Enter your username"/></View>
+                    <View ><Input value={newCreateEmail} onChangeText={o=>setnewCreateEmail(o)} size="large" placeholder="Enter your email"/></View>
+                    <View style={{paddingTop:0}}><Input value={newCreatePassword} onChangeText={o=>setnewCreatePassword(o)} secureTextEntry={true} size="large" placeholder="Enter your password" /></View>
+                    <Button style={{marginTop:10}} onPress={()=>{handleCreateNewUser()}}>Create Account</Button>
+                    <Button appearance="outline" style={{marginTop:10}} onPress={()=>{setLoginFormInput(false)}}>Back</Button>
+                </View>}
+              </>
+              :<>
               <View>
-                <Button appearance="ghost" onPress={()=>{setLoginFormInput('REGISTER')}} style={{marginTop:20}}>Create a ML Account</Button>
+                  <View style={{alignItems:'center'}}>
+                      <Button disabled accessoryLeft={()=><Ionicons name="logo-google" size={16} color="white" />} style={{width:'60%'}}> Sign in with Google </Button>
+                  </View>
+                  <View style={{alignItems:'center', marginTop:30}}>
+                      <Button accessoryLeft={()=><Ionicons name="ios-book-outline" size={16} color="white" />} style={{width:'60%'}} onPress={()=>{setLoginFormInput('LOGIN')}}> Sign in with ML Account </Button>
+                  </View>
+                  <View>
+                    <Button appearance="ghost" onPress={()=>{setLoginFormInput('REGISTER')}} style={{marginTop:20}}>Create a ML Account</Button>
+                  </View>
               </View>
-          </View>
-        </>}
-        <View style={{ alignItems:"center", justifyContent:'flex-end', padding:20}}>
-            <View style={{flexDirection:'row', alignItems:'center'}}>
-              <Text>Dark</Text>
-              <Toggle style={{margin:5}} checked={toggleTheme} onChange={()=>setToggleTheme(!toggleTheme)} />
-              <Text>Light</Text>
+            </>}
+            <View style={{ alignItems:"center", justifyContent:'flex-end', padding:20}}>
+                <View style={{flexDirection:'row', alignItems:'center'}}>
+                  <Text>Dark</Text>
+                  <Toggle style={{margin:5}} checked={toggleTheme} onChange={()=>setToggleTheme(!toggleTheme)} />
+                  <Text>Light</Text>
+                </View>
+                <Text category="h6" appearance='hint'>Created By Group 1</Text>
             </View>
-            <Text category="h6" appearance='hint'>Created By Group 1</Text>
-        </View>
-      </Layout>}
+          </Layout>}
+        </AppDataProvider>
       </ApplicationProvider>
   );
 }
