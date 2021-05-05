@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import * as eva from '@eva-design/eva';
-import { Layout, Text, Divider, List, ListItem, Icon, Button, Avatar, Card,OverflowMenu,MenuItem } from '@ui-kitten/components';
-import { SafeAreaView, View, StyleSheet, Modal, RefreshControl, ScrollView} from 'react-native';
+import { Layout, Text, Divider, List, ListItem, Icon, Button, Avatar, Card,OverflowMenu,MenuItem, Input } from '@ui-kitten/components';
+import { SafeAreaView, View, StyleSheet, Modal, RefreshControl, ScrollView, LogBox,Image} from 'react-native';
 import Header from '../Header';
 import dummyData from '../dummyData.json';
 import Repository from '../utilities/pouchDB';
@@ -10,6 +10,7 @@ import moment from 'moment';
 import { FontAwesome,Entypo } from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-community/async-storage';
+import { MaterialIcons } from '@expo/vector-icons';
 
 let db = new Repository();
 
@@ -39,6 +40,7 @@ const ClassHome = (props) => {
 
     useEffect(()=>{
         getClientData()
+        LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
     }, [])
 
     const getClientData = async () => {
@@ -122,7 +124,25 @@ const ClassHome = (props) => {
                 <MenuItem disabled title='Stats'/>
                 <MenuItem disabled title='About'/>
             </OverflowMenu> 
-        : <></>;
+        : <OverflowMenu
+            anchor={()=><Button onPress={()=>{setOverflowMenu(true)}} appearance="ghost"><Entypo name="dots-three-vertical" size={16} color="black" /></Button>}
+            visible={overflowMenu}
+            selectedIndex={selectedIndex}
+            onSelect={(val)=>{
+                setOverflowMenu(false)
+                // if(val.row === 0){
+                //     props.navigation.navigate("Create Lecture", {data:{...classDetails}});
+                // } else if (val.row === 1){
+                //     props.navigation.navigate("CreateTest", {data:{...classDetails}});
+                // }
+            }}
+            onBackdropPress={() => setOverflowMenu(false)}
+            >
+            <MenuItem disabled title='Attendence'/>
+            <MenuItem disabled title='Lecture'/>
+            <MenuItem disabled title='Exam'/>
+            <MenuItem disabled title='About'/>
+        </OverflowMenu> ;
     }
 
     const calculateTimeRemm = (time) => {
@@ -165,12 +185,39 @@ const ClassHome = (props) => {
             <ScrollView
                 contentContainerStyle={styles.scrollView}
                 refreshControl={
-                <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={onRefresh}
-                />
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                    />
                 }
             >
+            <View>
+                <Image
+                    style={{height:150, width: '100%', resizeMode:'cover'}}
+                    source={{uri:_.get(classDetails, 'classCoverImage', 'https://source.unsplash.com/300x200/?technology')}}
+                />
+            </View>
+            <View style={{padding: 10, flexDirection: 'row'}}>
+                <View style={{width:'85%'}}>
+                    <Input 
+                        accessoryRight={()=><MaterialIcons onPress={()=>{
+                            console.log("pressed!");
+                        }} name="add-a-photo" size={24} color="black" />}
+                        multiline placeholder="Create new post">
+                    </Input>
+                </View>        
+                <View style={{width:'13%', marginLeft:10}}>
+                    <Button size="small" style={{paddingLeft:10}} accessoryLeft={()=><MaterialIcons name="post-add" size={20} color="#fff" />}></Button>
+                </View>        
+            </View>
+            {/* <View style={{width: '90%', maxWidth:'90%', padding:10, flexDirection: 'row', backgroundColor:'red'}}>
+                <Input
+                    style={{flexGrow:1}}
+                    accessoryRight={()=><MaterialIcons name="add-a-photo" size={24} color="black" />}
+                    placeholder="Create new post" />    
+            </View>                
+            <Button style={{paddingLeft:10}}><MaterialIcons name="post-add" size={24} color="#fff" /></Button> */}
+
             <View>
                 {lectures.length > 0 ?<>
                     <View style={{padding:10}}>

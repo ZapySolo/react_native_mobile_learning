@@ -36,6 +36,7 @@
 // // export { Options };
 
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 
 import { RNS3 } from 'react-native-aws3';
 const awsConfig = require('../../../config.js');
@@ -49,21 +50,6 @@ export default class s3 {
             accessKey: awsConfig.awsaccessKeyId,
             secretKey: awsConfig.awssecretAccessKey,
             successActionStatus: 201
-        }
-        this.uploadFile = async (expoFileUriObject) => {
-            return new Promise((resolve, reject) => {
-                RNS3.put(expoFileUriObject, this.options)
-                    .then(response => {
-                        console.log('response',response);
-                        if (response.status !== 201){
-                            reject("Failed to upload image to S3");
-                        } else {
-                            console.log('File is successfull uploaded!');
-                            console.log(response.body);
-                            resolve(response.body);
-                        }
-                    });
-            });            
         }
 
         this.uploadProfilePhoto = async () => {
@@ -82,7 +68,37 @@ export default class s3 {
                     }
                     RNS3.put(filter, {...this.options, keyPrefix: 'profile/'})
                         .then(response => {
-                            console.log('response',response);
+                            //console.log('response',response);
+                            if (response.status !== 201){
+                                reject("Failed to upload image to S3");
+                            } else {
+                                resolve(response.body);
+                            }
+                        })
+                        .catch(err => {
+                            reject('RNS3 File upload error!');
+                        })
+                } else {
+                    reject('ImagePicker Error!');
+                }
+            });
+        }
+
+        this.fileUpload = async () => {
+            console.log('fileUpload called!');
+            return new Promise(async(resolve, reject) => {
+                let file = await DocumentPicker.getDocumentAsync({});
+                //console.log('file',file);
+                if (!file.cancelled) {
+                    let filename = file.uri.split('/').pop();
+                    let filter = {
+                        uri: file.uri,
+                        name: filename,
+                        type: file.type+'/'+filename.split('.').pop()
+                    }
+                    RNS3.put(filter, {...this.options, keyPrefix: 'attachment/'})
+                        .then(response => {
+                            //console.log('response',response);
                             if (response.status !== 201){
                                 reject("Failed to upload image to S3");
                             } else {

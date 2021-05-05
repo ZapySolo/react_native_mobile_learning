@@ -38,12 +38,12 @@ class Options {
 
 class Repository {
     //'https://nikhil:password@127.0.0.1:5984/test2'
-    constructor(dbName ='mobile_learning', remoteUrl = 'https://nikhil:password@127.0.0.1:5984/test2', options = {}, pouchPlugin) {
+    constructor(dbName ='local_mobile_learning', remoteUrl = 'http://nikhil:password@192.168.43.126:5984/remote_mobile_learning', options = {}, pouchPlugin) {
         this.dbName = dbName;
         if (pouchPlugin) PouchDB.plugin(pouchPlugin);
 
-        this.db = new PouchDB('mobile_learning');
-  
+        this.db = new PouchDB('local_mobile_learning');
+
         this.createIndex = (fields) => {
             return new Promise((resolve, reject) => {
                 this.db.createIndex({ index: { fields } })
@@ -220,13 +220,28 @@ class Repository {
             });
         }
         
+        // this.sync = () => {
+        //     return new Promise((resolve, reject) => {
+        //         await this.db.sync('',{
+        //             live: true
+        //           }).on('change', function (change) {
+        //             console.log(' yo, something changed!');
+        //           }).on('error', function (err) {
+        //             console.log(' yo, we got an error! (maybe the user went offline?')
+        //           });
+        //           resolve()
+        //     });
+        // }
+
         this.sync = () => {
-            // return new Promise((resolve, reject) => {
-            //     this.remoteDb = new PouchDB('https://127.0.0.1:5984/test2', {skip_setup: true});
-            //     this.remoteDb.logIn('nikhil', 'password').then(function (batman) {
-            //         console.log("I'm Batman.", batman);
-            //     });
-            // });
+            return new Promise((resolve, reject) => {
+                this.db.sync(`http://nikhil:password@192.168.43.126:5984/remote_mobile_learning`)
+                    .then((results) => resolve(results))
+                    .catch((error) => reject({
+                        error: `Could not sync with remote database`,
+                        dbError: error
+                    }));
+            });
         }
 
         this.close = () => {
@@ -267,26 +282,27 @@ class Repository {
         // }
 
         this.promisesReplicateFrom = async () => {
-            return false;
-            var remoteDB = new PouchDB('https://127.0.0.1:5984/mobile_learning', {skip_setup: true});
-            remoteDB.logIn('nikhil', 'password')
-                .then(() => {
-                    console.log("Successfully Logged CouchDB");
-                })
-                .catch((err)=>{
-                    console.log('Cannot log to remoteDB: ', err);
-                });
-            
+            console.log('promisesReplicateFrom called!');
             return new Promise((resolve, reject) => {
-                this.db.replicate.from(remoteUrl)
-                    .then((doc) => resolve(doc))
-                    .catch((error) => reject({
-                        error: `Could not Replicate from database`,
-                        dbError: error
+                this.db.replicate.from('http://nikhil:password@192.168.43.126:5984/remote_mobile_learning')
+                    .then((doc) => {
+                        this.db.replicate.to('http://nikhil:password@192.168.43.126:5984/remote_mobile_learning')
+                            .then(doc => {
+                                resolve(doc);
+                            })
+                            .catch(err => {
+                                reject(err);
+                            })
                     })
+                    .catch((error) => {
+                        console.log('Error Replicating', error);
+                        reject(error);
+                    }
                 );
-            });
+            })
         }
+
+        this.promisesReplicateFrom(); //to be called at the beginning
         
         // this.replicateFrom = () => {
         //    return this.db.replicate.from(remoteUrl, { live: true, retry: true })

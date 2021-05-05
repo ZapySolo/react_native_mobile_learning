@@ -57,7 +57,8 @@ const CreateJoinClass = (props) => {
                 classDescription: newClassDescription,
                 classJoinCode: classCodex,
                 isDeleted: false,
-                classProfileImage: 'https://source.unsplash.com/200x200/?'+_.replace(newClassTitle, / /g, "")
+                classProfileImage: 'https://source.unsplash.com/200x200/?'+_.replace(newClassTitle, / /g, ""),
+                classCoverImage: ''
             };
             console.log('class created!: ',obj);
             let res = await db.upsert(obj);
@@ -78,8 +79,11 @@ const CreateJoinClass = (props) => {
         });
         if(res.length > 0){
             let classx = _.cloneDeep(res[0]);
-            if(classx.teacherID !== clientProfile._id && !_.includes(classx.students, clientProfile._id)){
-                classx.students.push(clientProfile._id);
+            if(classx.teacherID !== clientProfile._id && !_.includes(classx.students, {studentID: clientProfile._id})){
+                classx.students.push({
+                    studentID: clientProfile._id,
+                    joinAt: new Date().toISOString()
+                });
                 console.log('joinNewClass: ', classx);
                 let upsrtRes = await db.upsert(classx);
                 if(upsrtRes) {

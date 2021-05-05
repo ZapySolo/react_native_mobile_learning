@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import * as eva from '@eva-design/eva';
 import { Layout, Text, Divider, List, ListItem, Icon, Button, Avatar, Card} from '@ui-kitten/components';
-import { SafeAreaView, View, StyleSheet} from 'react-native';
+import { SafeAreaView, View, StyleSheet, Image} from 'react-native';
 import Header from '../Header';
 import dummyData from '../dummyData.json';
 import Repository from '../utilities/pouchDB';
@@ -9,7 +9,6 @@ import { useEffect } from 'react/cjs/react.development';
 import AsyncStorage from '@react-native-community/async-storage';
 import _ from 'lodash';
 import moment from 'moment';
-
 import { FontAwesome,Entypo } from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
 
@@ -80,8 +79,6 @@ const HomeScreen = (props) => {
         setlectureList(data);
     }
 
-    
-
     const calculateTimeRemm = (time) => {
         var start_date = moment();
         var end_date = moment(time);
@@ -90,11 +87,11 @@ const HomeScreen = (props) => {
         if(duration <= 0){
             return 'ongoing';
         } else if (duration <= 60){
-            return parseInt(duration) + " min"
+            return parseFloat(duration).toFixed(1) + " min"
         } else if (duration <= 60 * 60) {
-            return parseInt(duration)/60 + " hrs"
+            return parseFloat(duration /60).toFixed(1) + " hrs"
         } else if (duration <= 60 * 60 * 24) {
-            return parseInt(duration)/60/24 + " days"
+            return parseFloat(duration /60/24).toFixed(1) + " days"
         }
     }
 
@@ -102,24 +99,33 @@ const HomeScreen = (props) => {
     <SafeAreaView style={{ flex: 1 }}>
         <Layout level="2" style={{flex: 1}}>
             <Header title="Home Screen" left={<FontAwesome onPress={()=>{props.navigation.openDrawer()}} name="bars" size={20} color="black" />}/>
+
             {lectureList.length > 0 ?<View style={{padding:10, paddingBottom:0}}>
                 <Text category='s1'>Today</Text>
                 <List
-                style={[styles.container, {padding:10, flexGrow:1}]}
-                data={lectureList}
-                ItemSeparatorComponent={() => <View style={{marginBottom:10}} />}
-                renderItem={({ item, index }) => (
-                    <ListItem
-                        onPress={()=>{props.navigation.navigate('Lecture', {...item})}}
-                        style={{ borderRadius:5}}
-                        title={`${item.lectureTitle}`}
-                        description={`${item.lectureDescription}`}
-                        accessoryLeft={() => <Avatar size='medium' source={{uri:item.classProfileImage}}/>}
-                        accessoryRight={() => <Text category="label" appearance="hint">{calculateTimeRemm(item.startTime)}</Text>}
-                        />
-                )}
+                    style={[styles.container, {padding:10, paddingLeft:0,paddingRight:0, flexGrow:1}]}
+                    data={lectureList}
+                    ItemSeparatorComponent={() => <View style={{marginBottom:10}} />}
+                    renderItem={({ item, index }) => (
+                        <ListItem
+                            onPress={()=>{props.navigation.navigate('Lecture', {...item})}}
+                            style={{ borderRadius:5}}
+                            title={`${item.lectureTitle}`}
+                            description={`${item.lectureDescription}`}
+                            accessoryLeft={() => <Avatar size='medium' source={{uri:item.classProfileImage}}/>}
+                            accessoryRight={() => <Text category="label" appearance="hint">{calculateTimeRemm(item.startTime)}</Text>}
+                            />
+                    )}
                 />
-            </View>: <Text>Nothing to display</Text>}
+            </View>: <>
+                <View style={{width: '100%', alignItems:'center'}}>
+                    <Image
+                        style={{height:200, width: 200, marginTop:'50%', resizeMode:'center'}}
+                        source={require('../../assets/blank.png')}
+                    />  
+                    <Text appearance="hint" style={{textAlign: 'center'}}>No Data Found</Text>
+                </View>
+            </>}
         </Layout>
     </SafeAreaView>);
 }

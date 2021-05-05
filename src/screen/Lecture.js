@@ -1,7 +1,7 @@
 import React,{useState, useRef} from 'react';
 import * as eva from '@eva-design/eva';
 import { Layout, Text, Divider, List, ListItem, Icon, Button, Avatar, Card, Input, RadioGroup,Radio, RangeCalendar, SelectItem, Select } from '@ui-kitten/components';
-import { SafeAreaView, View, StyleSheet, ScrollView, BackHandler} from 'react-native';
+import { SafeAreaView, View, StyleSheet, ScrollView, BackHandler, Image} from 'react-native';
 import Header from '../Header';
 import { Video, AVPlaybackStatus } from 'expo-av';
 import * as _ from 'lodash';
@@ -10,10 +10,14 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-community/async-storage';
 
 import YoutubePlayer from "react-native-youtube-iframe";
-
+import { SvgXml } from "react-native-svg";  
+import moment from 'moment';
 import Repository from '../utilities/pouchDB';
 import { DNS } from 'react-native-uuid';
 import { useEffect } from 'react';
+
+import CountDown from 'react-native-countdown-component';
+
 let db = new Repository();
 
 const imageLink = 'https://source.unsplash.com/200x200';
@@ -26,16 +30,35 @@ const Leacture = (props) => {
     const video = React.useRef(null);
     const [status, setStatus] = React.useState({});
     const [youtubePlaying, setYoutubePlaying] = React.useState(true);
+
+    const [lectureStarted, setLectureStarted] = React.useState(false);
+    const [secUntillLectureStart, setSecUntillLectureStart] = React.useState(null);
     
     const [lectureDetails, setlectureDetails] = React.useState({}); 
     const [clientProfile, setClientProfile] = useState({});
     const getClientData = async () => {
         setClientProfile(JSON.parse(await AsyncStorage.getItem('@client_profile')));
     }
-    React.useEffect(() => {
+    useEffect(() => {
+        const unsubscribe = props.navigation.addListener('focus', () => {
+        //
         getClientData();
-        fetchLectureDetails(_.get(props, 'route.params._id'))
-    }, [JSON.stringify(_.get(props, 'route.params'))]);
+        fetchLectureDetails(_.get(props, 'route.params._id'));
+        console.log({
+            startTime: moment(_.get(props, 'route.params.startTime')).valueOf(),
+            now:  moment().valueOf(),
+            started: moment(_.get(props, 'route.params.startTime')).valueOf() < moment().valueOf()
+        })
+        if(moment(_.get(props, 'route.params.startTime')).valueOf() < moment().valueOf()){
+            setLectureStarted(true);
+        } else {
+            setLectureStarted(false);
+            setSecUntillLectureStart(moment(_.get(props, 'route.params.startTime')).diff(moment(), 'seconds'));
+        }
+        //
+        });
+        return unsubscribe;
+    }, [props.navigation, _.get(props, 'route.params')]);
 
     // React.useEffect(() => {
     //     BackHandler.addEventListener("hardwareBackPress", setYoutubePlaying(false));
@@ -88,86 +111,106 @@ const Leacture = (props) => {
     
     return (
     <SafeAreaView style={{ flex: 1 }}>
-        <Layout level='3' style={{flex: 1}}>
+        <Layout level='4' style={{flex: 1}}>
             <Header 
-                title={ _.get(props, 'route.params.lectureDescription', 'Lecture')} 
+                title={ _.get(props, 'route.params.lectureTitle', 'Lecture')} 
                 left={<Ionicons name="chevron-back" size={24} color="black" onPress={()=>{
                     setYoutubePlaying(false);
                     props.navigation.goBack();
                 }}/>}
                 right={null}/>
-            <View style={{width:'100%', backgroundColor:'black'}}>
-                {/^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/.test(lectureDetails.videoLink)? <YoutubePlayer
-                    height={220}
-                    play={youtubePlaying}
-                    videoId={lectureDetails.videoLink.split(/v\/|v=|youtu\.be\//)[1].split(/[?&]/)[0]}
-                    onChangeState={e => {
-                        console.log(e);
+
+            {lectureStarted ? <>
+                <View style={{width:'100%', backgroundColor:'black'}}>
+                    {/^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/.test(lectureDetails.videoLink)? <YoutubePlayer
+                        height={220}
+                        play={youtubePlaying}
+                        videoId={lectureDetails.videoLink.split(/v\/|v=|youtu\.be\//)[1].split(/[?&]/)[0]}
+                        onChangeState={e => {
+                            console.log(e);
+                        }}
+                    /> : <Video
+                    ref={video}
+                    style={{height:200}}
+                    source={{
+                        uri: lectureDetails.videoLink,
                     }}
-                /> : <Video
-                ref={video}
-                style={{height:200}}
-                source={{
-                    uri: lectureDetails.videoLink,
-                }}
-                useNativeControls
-                resizeMode="contain"
-                isLooping
-                onPlaybackStatusUpdate={status => setStatus(() => status)}
-            />}
-                
-            </View>
-
-           {_.get(props, 'route.params.userType') !== 'TEACHER' && <View style={{justifyContent:'center', alignItems:'center'}}>
-                <View>
-                    <Button onPress={()=>{setDoubtButtonState(!doubtButtonState)}} style={{margin:10, marginBottom: 0}} status='primary'accessoryLeft={()=><Text>H</Text>}>
-                        Raise Doubt
-                    </Button>
+                    useNativeControls
+                    resizeMode="contain"
+                    isLooping
+                    onPlaybackStatusUpdate={status => setStatus(() => status)}
+                />}
+                    
                 </View>
-            </View>}
-            <View style={{paddingLeft:10, marginTop: 10}}>
-                <Text category="s1" >Other Students Doubt</Text>
-            </View>
-            <View style={{flexGrow:1, marginTop:10}}>
-                <List
-                    style={[styles.container, {padding:10}]}
-                    data={doubtList}
-                    renderItem={renderItem}
-                    ItemSeparatorComponent={() => <Divider />}
-                    />
-            </View>
-            {doubtButtonState && (
-                <Layout level="1" style={{padding:10, flexDirection:'row',justifyContent:'center', alignItems:'center'}}>
-                    <Input
-                        style={{flexGrow:1, paddingLeft:20}}
-                        //accessoryLeft={()=><Text>Left</Text>}
-                        placeholder='Type your doubt here'
-                        //accessoryRight={()=><Text>Send</Text>}
-                        value={doubtText}
-                        onChangeText={nextValue => setDoubtText(nextValue)}
-                        />
-                    <Text onPress={async ()=>{
-                        if(doubtText !== ''){
-                            let newDoubtlist = [...doubtList, {title:'You', description:doubtText, userID: clientProfile._id}]
-                            setDoubtList(newDoubtlist);
-                            setDoubtText('');
 
-                            let res = await db.findByID(lectureDetails._id);
-                            console.log('findByID',res);
-                            if(res){
-                                res.lectureDoubt = _.map(newDoubtlist, o => {
-                                    return {
-                                        description: o.description,
-                                        userID: o.userID
-                                    }
-                                });
-                                await db.upsert(res);
+            {_.get(props, 'route.params.userType') !== 'TEACHER' && <View style={{justifyContent:'center', alignItems:'center'}}>
+                    <View>
+                        <Button onPress={()=>{setDoubtButtonState(!doubtButtonState)}} style={{margin:10, marginBottom: 0}} status='primary'accessoryLeft={()=><Text>H</Text>}>
+                            Raise Doubt
+                        </Button>
+                    </View>
+                </View>}
+                <View style={{paddingLeft:10, marginTop: 10}}>
+                    <Text category="s1" >Other Students Doubt</Text>
+                </View>
+                <View style={{flexGrow:1, marginTop:10}}>
+                    <List
+                        style={[styles.container, {padding:10}]}
+                        data={doubtList}
+                        renderItem={renderItem}
+                        ItemSeparatorComponent={() => <Divider />}
+                        />
+                </View>
+                {doubtButtonState && (
+                    <Layout level="1" style={{padding:10, flexDirection:'row',justifyContent:'center', alignItems:'center'}}>
+                        <Input
+                            style={{flexGrow:1, paddingLeft:20}}
+                            //accessoryLeft={()=><Text>Left</Text>}
+                            placeholder='Type your doubt here'
+                            //accessoryRight={()=><Text>Send</Text>}
+                            value={doubtText}
+                            onChangeText={nextValue => setDoubtText(nextValue)}
+                            />
+                        <Text onPress={async ()=>{
+                            if(doubtText !== ''){
+                                let newDoubtlist = [...doubtList, {title:'You', description:doubtText, userID: clientProfile._id}]
+                                setDoubtList(newDoubtlist);
+                                setDoubtText('');
+
+                                let res = await db.findByID(lectureDetails._id);
+                                console.log('findByID',res);
+                                if(res){
+                                    res.lectureDoubt = _.map(newDoubtlist, o => {
+                                        return {
+                                            description: o.description,
+                                            userID: o.userID
+                                        }
+                                    });
+                                    await db.upsert(res);
+                                }
                             }
-                        }
-                    }} style={{padding:10}}>Send</Text>
-                </Layout>
-            )}
-            
+                        }} style={{padding:10}}>Send</Text>
+                    </Layout>
+                )}
+            </>:<>
+                <Image
+                    style={{ width: '100%', resizeMode:'center', height: '50%', marginTop:'40%'}}
+                    source={require('../../assets/lecture_not_started.png')}
+                />
+                <Text appearance="hint" style={{textAlign:'center'}}>Lecture not started yet</Text>
+                {secUntillLectureStart && <CountDown
+                    until={secUntillLectureStart}
+                    onFinish={() => {
+                        alert('Lecture Started!')
+                        setLectureStarted(true);
+                    }}
+                    //onPress={() => {alert('hello')}}
+                    size={20}
+                    style={{marginTop: 20}}
+                    digitTxtStyle={{color: '#fff'}}
+                    digitStyle={{backgroundColor: '#536DFE'}}
+                />}
+            </>}
         </Layout>
     </SafeAreaView>);
 }

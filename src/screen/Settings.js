@@ -67,6 +67,12 @@ const Settings = (props) => {
         }
     }
 
+    const handleFileUpload = async () => {
+        let result = await s3.fileUpload();
+        let fileLocation = result.postResponse.location;
+        console.log('fileLocation',fileLocation);
+    }
+
     const handleUserNameChange = async (newName) => {
         let resule = await db.findByID(clientProfile._id);
         resule.username = newName;
@@ -148,6 +154,9 @@ const Settings = (props) => {
                     <Text category='s1' appearance="hint" >{'Software Information'}</Text>
                 </View>}
             />
+            <Button onPress={()=>{
+                db.promisesReplicateFrom();
+            }}>Sync Database</Button>
             <Divider />
         </Layout>
     </SafeAreaView>);

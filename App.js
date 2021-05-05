@@ -30,6 +30,8 @@ import { Layout, Input, Button, Text, Avatar, List, ListItem} from '@ui-kitten/c
 import Repository from './src/utilities/pouchDB';
 let db = new Repository();
 
+const seedData = require('./src/utilities/seedData');
+
 const Drawer = createDrawerNavigator();
 
 export default function App() {
@@ -70,48 +72,7 @@ export default function App() {
   React.useEffect(() => {
     checkIfAlreadyLoggedIn();
     checkForTheme();
-    checkIfDatabaseExist();
   }, []);
-
-  const checkIfDatabaseExist = async () => {
-    let result = await db.findMany({
-      _id: {
-        $regex: 'profile'
-      }
-    });
-    if(result.length === 0){
-      await db.destroy();
-      await db.upsertMany([{
-          _id: 'profile:6289c5fd-f671-4e83-989b-e28662981fd9',
-          username: 'Raj Surve',
-          password: {
-              salt: 'abc',
-              hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'
-          },
-          profileImageUrl: 'https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?f=y',
-          email: 'raj@gmail.com',
-          allowPushNotification: true,
-          allowEmailNotification: false,
-          type: 'USER',
-          isDeleted: false,
-          created: new Date().toISOString()
-      },{
-        _id: 'profile:6289c5fd-f671-4e83-989b-e23662981fd9',
-        username: 'Nikhil Patil',
-        password: {
-            salt: 'abc',
-            hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'
-        },
-        profileImageUrl: 'https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?f=y',
-        email: 'nikhil@gmail.com',
-        allowPushNotification: true,
-        allowEmailNotification: false,
-        type: 'USER',
-        isDeleted: false,
-        created: new Date().toISOString()
-      }]);
-    }
-  }
 
   const handleLogin = async () => {
     setLoginError(false);
@@ -121,6 +82,12 @@ export default function App() {
       Crypto.CryptoDigestAlgorithm.SHA256,
       loginPassword
     );
+
+    console.log('ddsss',await db.findMany({
+        _id: {
+          $regex: 'profile'
+        }
+    }));
   
     let profileRes = await db.findMany({
       _id: {
@@ -133,6 +100,7 @@ export default function App() {
     if(profileRes.length === 0){
       setLoginError(true);
     } else if (profileRes.length >= 1){
+      console.log({profileRes});
       if(profileRes.length > 1) console.log('multiple profiles found: ', profileRes);
       try{
         await AsyncStorage.setItem('@client_profile', JSON.stringify(profileRes[0]));

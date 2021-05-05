@@ -1,26 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import * as eva from '@eva-design/eva';
-import {SafeAreaView, View, Image, Appearance, ToastAndroid} from 'react-native';
+import {SafeAreaView, View, Image, Appearance, ToastAndroid,ScrollView,RefreshControl} from 'react-native';
 import { Divider} from '@ui-kitten/components';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import AsyncStorage from '@react-native-community/async-storage';
 import _ from 'lodash';
 import { MaterialIcons } from '@expo/vector-icons';
-
+import { Feather } from '@expo/vector-icons';
 import { Layout, Input, Button, Text, Avatar, List, ListItem} from '@ui-kitten/components';
+import { Ionicons } from '@expo/vector-icons';
 import Repository from '../src/utilities/pouchDB';
-let db = new Repository();
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { SimpleLineIcons } from '@expo/vector-icons';
 
+let db = new Repository();
 const Drawer = createDrawerNavigator();
 
 export default CustomDrawer = (props) => {
     //const navigation = useNavigation();
     const [clientProfile, setClientProfile] = React.useState(null);
     const [classList, setClassList] = React.useState([]);
-  
+    const [refreshing, setRefreshing] = React.useState(false);
+
     useEffect(() => {
       getUserProfile();
     }, []);
+
+    const wait = (timeout) => {
+      return new Promise(resolve =>  {
+        getUserProfile();
+        resolve();
+      });
+  }
     
     useEffect(() => {
       if(_.get(clientProfile, '_id')){
@@ -57,18 +68,30 @@ export default CustomDrawer = (props) => {
   
       setClassList([...listAsTeacher,...listAsStudent]);
     }
-  
+    const onRefresh = React.useCallback(() => {
+      setRefreshing(true);
+      wait(2000).then(() => setRefreshing(false));
+    }, []);
+
     return (
         <Layout level="1" style={{flex:1, paddingTop:30}}>
-          {clientProfile ? (<View style={{alignItems:'center', marginTop:30, marginBottom:25}}>
+          {clientProfile ? (<View style={{alignItems:'center', marginTop:30}}>
             <Image source={{uri:clientProfile.profileImageUrl ? clientProfile.profileImageUrl:'https://source.unsplash.com/200x200/?face'}} style={{height:80, width:80, borderRadius:40, marginBottom:5}}/>
-            <Text category="h5">Welcome, {clientProfile.username}</Text>
-            <Text category="s1">{clientProfile.email}</Text>
-            <Text category="s1" appearance="hint" onPress={()=>{props.navigation.navigate("Settings")}}>Settings</Text>
+            <Text category="h5" style={{marginTop: 5}}>Welcome, {clientProfile.username}</Text>
+            <Text category="s1" appearance="hint" >{clientProfile.email}</Text>
           </View>): <></>}
-          <Divider />
+          <Divider style={{marginTop: 10}} />
+          <ScrollView
+                contentContainerStyle={{flexGrow:1}}
+                refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                />
+                }
+            >
           <List
-            style={{padding:10, flexGrow:1}}
+            style={{padding:10}}
             data={classList}
             renderItem={({ item, index }) => (
               <ListItem
@@ -81,24 +104,33 @@ export default CustomDrawer = (props) => {
           )}
             ItemSeparatorComponent={() => <View style={{marginTop:5}} />}
             />
-          <View>
-            <Button appearance="ghost" onPress={()=>{props.navigation.navigate("CreateJoinClass")}}>Create/Join Class</Button>
-          </View>
-          <View style={{padding:10, alignItems:'center', textAlign:'center', justifyContent:'center', paddingTop:30}}>
-            <Text category="p1" appearance='hint' style={{textAlign:"center", lineHeight:23, fontStyle:'italic'}} >Education is the passport to the future for tomorrow belongs to those who prepare for it today.</Text>
-          </View>
-          <View style={{marginTop:30}}>
+            </ScrollView>
+            <Divider/>
             <Button 
-              accessoryRight={()=><MaterialIcons name="logout" size={12} color="#3366FF" />}
-              appearance="ghost" 
+              accessoryLeft={()=><MaterialCommunityIcons name="google-classroom" size={12} color="#3366FF" />}
+              appearance="ghost"
+              style={{justifyContent:'flex-start', paddingLeft:20}}
+              onPress={()=>{props.navigation.navigate("CreateJoinClass")}}>Join Class</Button>
+           <Divider/>
+            <Button 
+            style={{justifyContent:'flex-start', paddingLeft:20}}
+              accessoryLeft={()=><Feather name="settings" size={12} color="#3366FF" />}
+              appearance="ghost"   onPress={()=>{props.navigation.navigate("Settings")}}>Setting</Button>
+          <Divider/>
+            <Button 
+            style={{justifyContent:'flex-start', paddingLeft:20}}
+              accessoryLeft={()=><MaterialIcons name="logout" size={12} color="#3366FF" />}
+              appearance="ghost"  
               onPress={async()=>{
                 await AsyncStorage.setItem('@client_profile', '');
                 props.setLoggedIn(false)
               }}>Logout</Button>
-              
+          <Divider/>
+          <View style={{padding:10, alignItems:'center', textAlign:'center', justifyContent:'center', paddingTop:30}}>
+            <Text category="p1" appearance='hint' style={{textAlign:"center", lineHeight:23, fontStyle:'italic'}} >Education is the passport to the future for tomorrow belongs to those who prepare for it today.</Text>
           </View>
-          <View style={{alignItems:"center", justifyContent:'flex-end', padding:15}}>
-              <Text category="s1" appearance='hint'>Created By Group 1</Text>
+          <View style={{alignItems:"center", justifyContent:'flex-end', padding:15, marginTop:20}}>
+              <Text category="s2" appearance='hint'>Created By Group 1</Text>
           </View>
         </Layout>
     )
