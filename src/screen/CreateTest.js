@@ -1,5 +1,4 @@
 import React,{useState, useEffect} from 'react';
-import * as eva from '@eva-design/eva';
 import { Layout, Text, Divider, List, ListItem, Icon, Button, Avatar, Card, Input, RadioGroup,Radio, RangeCalendar, SelectItem, Select, CheckBox,Modal } from '@ui-kitten/components';
 import { SafeAreaView, View, StyleSheet, ScrollView} from 'react-native';
 import Header from '../Header';
@@ -57,7 +56,7 @@ const CreateTest = (props) => {
                     ...prev,
                     postTitle: '',
                     postDescription: 'New Test has been Assigned',
-                    _id:'post:'+uuid.v4(),
+                    _id:'test:'+uuid.v4(),
                     quizStartTime: new Date().toISOString(),
                     quizEndTime: new Date().toISOString(),
                     created: new Date().toISOString()
@@ -345,7 +344,7 @@ const CreateTest = (props) => {
                     if(result){
                         setSubmitSuccessModal(true);
                         setPostObj({
-                            _id:'post:'+uuid.v4(),
+                            _id:'test:'+uuid.v4(),
                             postTitle: '',
                             postDescription: 'New Test has been Assigned',
                             type: 'QUIZ',

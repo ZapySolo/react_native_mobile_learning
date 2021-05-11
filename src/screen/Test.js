@@ -70,7 +70,9 @@ const Test = (props) => {
             if(!_.find(result.quizResponse, o => o.studentID === clientID)){
                 result.quizResponse = [...result.quizResponse, quizResponse];
             } else {
+                alert('You have already responded!\nYour response will not be saved');
                 console.log('You have already responded!');
+                return;
             }
         }
         await db.upsert(result);
@@ -101,7 +103,7 @@ const Test = (props) => {
                     if(flag) score = score + Number(ques.marks);
                 } else if(ques.questionType === 'TEXT_INPUT'){
                     let flag = true;
-                    if(ques.answer !== ans.answerText) flag = false;
+                    if(!(new RegExp(ques.answer, 'i').test(ans.answerText))) flag = false;
                     if(flag) score = score + Number(ques.marks);
                 }
             } else {
@@ -270,7 +272,6 @@ const Test = (props) => {
                             <Text category="h5" style={{textAlign:'center'}}>Test Successfully Submitted!</Text>      
                             <Text category="h5" style={{textAlign:'center'}}>You have scored {score} Marks</Text>
                             <Button style={{marginTop: 10}} appearance="outline" onPress={() => {
-                                    setSubmitSuccessModal(false);
                                     props.navigation.goBack();
                                     }}>Back to homescreen</Button>
                         </View>

@@ -10,7 +10,7 @@ import moment from 'moment';
 import { Ionicons } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
+import { Entypo } from '@expo/vector-icons';
 const CreateNew = (props) => {
     const [userType, setUserType] = useState(''); //STUDENT TEACHER
 
@@ -30,30 +30,29 @@ const CreateNew = (props) => {
                     </Card>
                     <Card onPress={() => {
                         props.navigation.navigate("Create Lecture", {data:{..._.get(props, 'route.params.data')}});
-                    }} style={styles.card} header={() => <Ionicons style={{alignSelf:'center', paddingTop:20, paddingBottom:20}} name="ios-add-circle-outline" size={42} color="black" />}>
+                    }} style={styles.card} header={() => <Entypo name="folder-video" style={{alignSelf:'center', paddingTop:20, paddingBottom:20}} size={42} color="black" />}>
                         <Text style={{alignSelf: 'center'}}>Lecture</Text>
                     </Card>
                     <Card onPress={()=>{
                         props.navigation.navigate("CreateAssignExp", {classID: _.get(props, 'route.params.data._id'), actionType:'CREATE_EXPERIMENT', data: {..._.get(props, 'route.params.data')}})
-                    }} style={styles.card} header={() => <Ionicons style={{alignSelf:'center', paddingTop:20, paddingBottom:20}} name="ios-add-circle-outline" size={42} color="black" />}>
+                    }} style={styles.card} header={() => <MaterialIcons style={{alignSelf:'center', paddingTop:20, paddingBottom:20}} name="assignment" size={42} color="black" />}>
                         <Text style={{alignSelf: 'center'}}>Experiment</Text>
                     </Card>
                 </View>
-                <View onPress={()=>{
-                        console.log('pressed!')
-                        props.navigation.navigate("CreateAssignExp", {classID: _.get(props, 'route.params.data._id'), actionType:'CREATE_ASSIGNMENT', data: {..._.get(props, 'route.params.data')}})
-                    }} style={{width: '100%', flexDirection: 'row', flexWrap: 'wrap'}}>
-                    <Card style={styles.card} header={() => <MaterialIcons style={{alignSelf:'center', paddingTop:20, paddingBottom:20}} name="assignment" size={42} color="black" />}>
+                <View style={{width: '100%', flexDirection: 'row', flexWrap: 'wrap'}}>
+                    <Card onPress={() => {
+                            props.navigation.navigate("CreateAssignExp", {classID: _.get(props, 'route.params.data._id'), actionType:'CREATE_ASSIGNMENT', data: {..._.get(props, 'route.params.data')}})
+                        }} style={styles.card} header={() => <MaterialIcons style={{alignSelf:'center', paddingTop:20, paddingBottom:20}} name="assignment" size={42} color="black" />}>
                         <Text style={{alignSelf: 'center'}}>Assignment</Text>
                     </Card>
-                    <Card 
+                    <Card
                         onPress={() => {
                             props.navigation.navigate("CreateTest", {data:{..._.get(props, 'route.params.data')}});
                         }}
-                        style={styles.card} header={() => <Ionicons style={{alignSelf:'center', paddingTop:20, paddingBottom:20}} name="ios-add-circle-outline" size={42} color="black" />}>
+                        style={styles.card} header={() => <MaterialCommunityIcons style={{alignSelf:'center', paddingTop:20, paddingBottom:20}} name="book-open-page-variant" size={42} color="black" />}>
                         <Text style={{alignSelf: 'center'}}>Test</Text>
                     </Card>
-                    <Card disabled style={styles.card} header={() => <Ionicons style={{alignSelf:'center', paddingTop:20, paddingBottom:20}} name="ios-add-circle-outline" size={42} color="black" />}>
+                    <Card disabled style={styles.card} header={() => <MaterialCommunityIcons style={{alignSelf:'center', paddingTop:20, paddingBottom:20}} name="book-open-page-variant" size={42} color="black" />}>
                         <Text style={{alignSelf: 'center'}}>Exam</Text>
                     </Card>
                 </View>

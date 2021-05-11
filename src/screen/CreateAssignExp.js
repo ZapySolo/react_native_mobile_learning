@@ -52,8 +52,8 @@ const CreateAssignExp = (props) => {
         } else if (_.get(props, 'route.params.actionType') === 'EDIT_ASSIGNMENT'){
             setTitle('assignment');
             setActionType('EDIT');
-        }  
-    }, []);
+        }
+    }, [_.get(props, 'route.params.actionType')]);
 
     const handleOnSubmitPost = async () => {
         let newPost = {...post};
@@ -78,7 +78,9 @@ const CreateAssignExp = (props) => {
             setSuccessModalVisibility(true);
             setTimeout(() => {
                 setSuccessModalVisibility(false);
-                props.navigation.goBack();
+                setTimeout(() => {
+                    props.navigation.goBack();
+                }, 100);
             }, 2000);
         } else {
             console.log('upset failed!');
@@ -93,7 +95,7 @@ const CreateAssignExp = (props) => {
             }}/>}/>
             <ScrollView>
                 <Layout level="1" style={{margin: 10, borderRadius: 8, padding: 10}}>
-                    <Text category="s1">{actionType === 'CREATE' ? 'Create ' : 'Edit '} {title}</Text>
+                    <Text category="s1">{actionType === 'CREATE' ? 'Create' : 'Edit'} {title.charAt(0).toUpperCase() + title.slice(1)}</Text>
                     <Input value={post.title} onChangeText={o => setPost(prev => {return {...prev, title: o}})} style={{marginTop: 10}} label="Title"/>
                     <Input multiline value={post.description} onChangeText={o => setPost(prev => {return {...prev, description: o}})} style={{marginTop: 5}} label="Description"/>
                     {attachmentList.map((o, index) => <View key={'attachmentList'+index} style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop:10}}>

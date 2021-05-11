@@ -12,6 +12,9 @@ import {v4 as uuid} from "uuid";
 import { Ionicons } from '@expo/vector-icons';
 
 import Repository from '../utilities/pouchDB';
+import S3 from '../utilities/aws/s3';
+
+let s3 = new S3();
 let db = new Repository();
 
 const windowWidth = Dimensions.get('window').width;
@@ -114,22 +117,32 @@ const CreateLeacture = (props) => {
                 <RadioGroup
                     style={{marginBottom:5}}
                     selectedIndex={selectedLectureTypeIndex}
-                    onChange={index => {
+                    onChange={async (index) => {
                         setSelectedLectureTypeIndex(index);
                         if(index === 0){
                             setLectureDetails({...lectureDetails, lectureType:'VIDEO_UPLOAD'});
                         } else if (index === 1){
-                            setLectureDetails({...lectureDetails, lectureType:'SCREEN_SHARING'});
+                            let result = await s3.fileUpload();
+                            console.log('result1c',result)
+                            if(result) {
+                                let uri = result.postResponse.location;
+                                console.log('uri',result);
+                                setLectureDetails({...lectureDetails, videoLink:uri,lectureType:'VIDEO_UPLOAD'});
+                            }
                         } else if (index === 2){
+                            setLectureDetails({...lectureDetails, lectureType:'SCREEN_SHARING'});
+                        } else if (index === 3){
                             setLectureDetails({...lectureDetails, lectureType:'LIVE_CAMERA'});
                         }
                     }}>
-                    <Radio>Upload Video Url</Radio>
+                    <Radio>Video Url</Radio>
+                    <Radio>Upload Video</Radio>
                     <Radio disabled>Screen Sharing</Radio>
                     <Radio disabled>Live Camera Session</Radio>
                 </RadioGroup>
-                {selectedLectureTypeIndex === 0 ?
+                {selectedLectureTypeIndex === 0 || selectedLectureTypeIndex === 1 ?
                     <Input
+                        disabled={selectedLectureTypeIndex === 1}
                         accessoryLeft={() => <Text style={{color:'#8F9BB3'}}>{`Url`}</Text>}
                         value={lectureDetails.videoLink}
                         onChangeText={(o)=>{

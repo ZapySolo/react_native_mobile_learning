@@ -185,7 +185,7 @@ const Leacture = (props) => {
                 </Layout>
             </>:<>
                 <Image
-                    style={{ width: '100%', resizeMode:'center', height: '50%', marginTop:'40%'}}
+                    style={{ height:200, width: 200, marginTop:'50%', resizeMode:'center', alignSelf: 'center'}}
                     source={require('../../assets/lecture_not_started.png')}
                 />
                 <Text appearance="hint" style={{textAlign:'center'}}>Lecture not started yet</Text>

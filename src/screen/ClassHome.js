@@ -98,23 +98,28 @@ const ClassHome = (props) => {
         //console.log('upcommingLecture',upcommingLecture);
     }
     const headerRight = () => {
-        return (userType === 'TEACHER') 
-        ? 
+        return (
             <View style={{flexDirection: 'row', justifyContent:'center' , alignItems: 'center'}}>
-                <Ionicons name="ios-add-circle-outline" onPress={()=>{
+                {(userType === 'TEACHER') && <Ionicons name="ios-add-circle-outline" onPress={()=>{
                     props.navigation.navigate("CreateNew", {data: {...classDetails}});
-                }} size={24} color="black" />
+                }} size={24} color="black" />}
                 <OverflowMenu
                     anchor={()=><Button onPress={()=>{setOverflowMenu(true)}} appearance="ghost"><Entypo name="dots-three-vertical" size={16} color="black" /></Button>}
                     visible={overflowMenu}
-                    selectedIndex={selectedIndex}
+                    //selectedIndex={selectedIndex}
                     onSelect={(val)=>{
                         setOverflowMenu(false);
-                        setSelectedIndex(val);
+                        //setSelectedIndex(val);
                         if(val.row === 0) {
-
+                            props.navigation.navigate("DataList", {data: {...classDetails}, userType, dataType: 'LECTURE'});
                         } else if (val.row === 1) {
-
+                            props.navigation.navigate("DataList", {data: {...classDetails}, userType, dataType: 'EXPERIMENT'});
+                        } else if (val.row === 2) {
+                            props.navigation.navigate("DataList", {data: {...classDetails}, userType, dataType: 'ASSIGNMENT'});
+                        }  else if (val.row === 3) {
+                            props.navigation.navigate("DataList", {data: {...classDetails}, userType, dataType: 'TEST'});
+                        }  else if (val.row === 4) {
+                            props.navigation.navigate("DataList", {data: {...classDetails}, userType, dataType: 'EXAMS'});
                         }
                     }}
                     onBackdropPress={() => setOverflowMenu(false)}
@@ -123,32 +128,13 @@ const ClassHome = (props) => {
                     <MenuItem title='Experiments'/>
                     <MenuItem title='Assignments'/>
                     <MenuItem title='Test'/>
-                    <MenuItem title='Exams'/>
-                    <MenuItem disabled title='Stats'/>
-                    <MenuItem disabled title='Delete Class'/>
+                    <MenuItem disabled title='Exams'/>
                     <MenuItem disabled title='About'/>
+                    {(userType === 'TEACHER') && <MenuItem disabled title='Stats'/>}
+                    {(userType === 'TEACHER') && <MenuItem disabled title='Delete Class'/>}
                 </OverflowMenu> 
             </View>
-        : <OverflowMenu
-            anchor={()=><Button onPress={()=>{setOverflowMenu(true)}} appearance="ghost"><Entypo name="dots-three-vertical" size={16} color="black" /></Button>}
-            visible={overflowMenu}
-            selectedIndex={selectedIndex}
-            onSelect={(val)=>{
-                setOverflowMenu(false)
-                // if(val.row === 0){
-                //     props.navigation.navigate("Create Lecture", {data:{...classDetails}});
-                // } else if (val.row === 1){
-                //     props.navigation.navigate("CreateTest", {data:{...classDetails}});
-                // }
-            }}
-            onBackdropPress={() => setOverflowMenu(false)}
-            >
-            <MenuItem disabled title='Lectures'/>
-            <MenuItem disabled title='Assignments/Experiments'/>
-            <MenuItem disabled title='Test'/>
-            <MenuItem disabled title='Exams'/>
-            <MenuItem disabled title='About'/>
-        </OverflowMenu> ;
+        );
     }
 
     const calculateTimeRemm = (time) => {

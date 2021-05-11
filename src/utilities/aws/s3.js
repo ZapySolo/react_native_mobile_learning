@@ -92,20 +92,28 @@ export default class s3 {
             console.log('fileUpload called!');
             return new Promise(async(resolve, reject) => {
                 let file = await DocumentPicker.getDocumentAsync({});
-                //console.log('file',file);
+                console.log('file',file);
                 if (!file.cancelled) {
                     let filename = file.uri.split('/').pop();
+                    let type;
+                    if(filename.split('.').pop() === 'mp4'){
+                        type = 'video/mp4';
+                    } else {
+                        type = file.type+'/'+filename.split('.').pop()
+                    }
                     let filter = {
                         uri: file.uri,
                         name: filename,
-                        type: file.type+'/'+filename.split('.').pop()
+                        type
                     }
+                    console.log('filter',filter);
                     RNS3.put(filter, {...this.options, keyPrefix: 'attachment/'})
                         .then(response => {
-                            //console.log('response',response);
+                            console.log('response',response);
                             if (response.status !== 201){
                                 reject("Failed to upload image to S3");
                             } else {
+                                console.log("File uploaded!", response.body);
                                 resolve(response.body);
                             }
                         })
