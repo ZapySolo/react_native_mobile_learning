@@ -11,7 +11,7 @@ import { FontAwesome,Entypo } from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-community/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
-
+import { Ionicons } from '@expo/vector-icons';
 let db = new Repository();
 
 const imageLink = 'https://source.unsplash.com/200x200'; //https://source.unsplash.com/100x100/?face
@@ -24,8 +24,6 @@ const ClassHome = (props) => {
     const [selectedIndex, setSelectedIndex] = useState(null);
     
     const [classDetails, setClassDetails] = useState(_.get(props, 'route.params.data'));
-
-    const [viewScore, setViewScore] = useState(null);
 
     const [lectures, setLectures] = useState([]);
     const [posts, setPosts] = useState([]);
@@ -67,7 +65,6 @@ const ClassHome = (props) => {
         }
     }, [JSON.stringify(_.get(props, 'route.params.data', {}))])
 
-    
     const getData =  async (classID) => {
         let filter = {
             _id: {
@@ -103,27 +100,35 @@ const ClassHome = (props) => {
     const headerRight = () => {
         return (userType === 'TEACHER') 
         ? 
-            <OverflowMenu
-                anchor={()=><Button onPress={()=>{setOverflowMenu(true)}} appearance="ghost"><Entypo name="dots-three-vertical" size={16} color="black" /></Button>}
-                visible={overflowMenu}
-                selectedIndex={selectedIndex}
-                onSelect={(val)=>{
-                    setOverflowMenu(false)
-                    //setSelectedIndex(val);
-                    if(val.row === 0){
-                        props.navigation.navigate("Create Lecture", {data:{...classDetails}});
-                    } else if (val.row === 1){
-                        props.navigation.navigate("CreateTest", {data:{...classDetails}});
-                    }
-                }}
-                onBackdropPress={() => setOverflowMenu(false)}
-                >
-                <MenuItem title='Create New Lecture'/>
-                <MenuItem title='Create New Test'/>
-                <MenuItem disabled title='Delete Class'/>
-                <MenuItem disabled title='Stats'/>
-                <MenuItem disabled title='About'/>
-            </OverflowMenu> 
+            <View style={{flexDirection: 'row', justifyContent:'center' , alignItems: 'center'}}>
+                <Ionicons name="ios-add-circle-outline" onPress={()=>{
+                    props.navigation.navigate("CreateNew", {data: {...classDetails}});
+                }} size={24} color="black" />
+                <OverflowMenu
+                    anchor={()=><Button onPress={()=>{setOverflowMenu(true)}} appearance="ghost"><Entypo name="dots-three-vertical" size={16} color="black" /></Button>}
+                    visible={overflowMenu}
+                    selectedIndex={selectedIndex}
+                    onSelect={(val)=>{
+                        setOverflowMenu(false);
+                        setSelectedIndex(val);
+                        if(val.row === 0) {
+
+                        } else if (val.row === 1) {
+
+                        }
+                    }}
+                    onBackdropPress={() => setOverflowMenu(false)}
+                    >
+                    <MenuItem style={{marginTop: 50}} title='Lectures'/>
+                    <MenuItem title='Experiments'/>
+                    <MenuItem title='Assignments'/>
+                    <MenuItem title='Test'/>
+                    <MenuItem title='Exams'/>
+                    <MenuItem disabled title='Stats'/>
+                    <MenuItem disabled title='Delete Class'/>
+                    <MenuItem disabled title='About'/>
+                </OverflowMenu> 
+            </View>
         : <OverflowMenu
             anchor={()=><Button onPress={()=>{setOverflowMenu(true)}} appearance="ghost"><Entypo name="dots-three-vertical" size={16} color="black" /></Button>}
             visible={overflowMenu}
@@ -138,9 +143,10 @@ const ClassHome = (props) => {
             }}
             onBackdropPress={() => setOverflowMenu(false)}
             >
-            <MenuItem disabled title='Attendence'/>
-            <MenuItem disabled title='Lecture'/>
-            <MenuItem disabled title='Exam'/>
+            <MenuItem disabled title='Lectures'/>
+            <MenuItem disabled title='Assignments/Experiments'/>
+            <MenuItem disabled title='Test'/>
+            <MenuItem disabled title='Exams'/>
             <MenuItem disabled title='About'/>
         </OverflowMenu> ;
     }
@@ -194,30 +200,9 @@ const ClassHome = (props) => {
             <View>
                 <Image
                     style={{height:150, width: '100%', resizeMode:'cover'}}
-                    source={{uri:_.get(classDetails, 'classCoverImage', 'https://source.unsplash.com/300x200/?technology')}}
+                    source={{uri:"https://source.unsplash.com/300x200/?technology"}}
                 />
             </View>
-            <View style={{padding: 10, flexDirection: 'row'}}>
-                <View style={{width:'85%'}}>
-                    <Input 
-                        accessoryRight={()=><MaterialIcons onPress={()=>{
-                            console.log("pressed!");
-                        }} name="add-a-photo" size={24} color="black" />}
-                        multiline placeholder="Create new post">
-                    </Input>
-                </View>        
-                <View style={{width:'13%', marginLeft:10}}>
-                    <Button size="small" style={{paddingLeft:10}} accessoryLeft={()=><MaterialIcons name="post-add" size={20} color="#fff" />}></Button>
-                </View>        
-            </View>
-            {/* <View style={{width: '90%', maxWidth:'90%', padding:10, flexDirection: 'row', backgroundColor:'red'}}>
-                <Input
-                    style={{flexGrow:1}}
-                    accessoryRight={()=><MaterialIcons name="add-a-photo" size={24} color="black" />}
-                    placeholder="Create new post" />    
-            </View>                
-            <Button style={{paddingLeft:10}}><MaterialIcons name="post-add" size={24} color="#fff" /></Button> */}
-
             <View>
                 {lectures.length > 0 ?<>
                     <View style={{padding:10}}>
@@ -230,7 +215,7 @@ const ClassHome = (props) => {
                         renderItem={({ item, index }) => (
                             <ListItem
                                 onPress={()=>{props.navigation.navigate('Lecture', {...item,userType})}}
-                                style={{ borderRadius:5}}
+                                style={{ borderRadius:5, borderWidth:1, borderColor: '#e9eef4'}}
                                 title={`${item.lectureTitle}`}
                                 description={`${item.lectureDescription}`}
                                 accessoryLeft={() => <Avatar size='medium' source={{uri:classDetails.classProfileImage}}/>}
@@ -252,43 +237,40 @@ const ClassHome = (props) => {
                         data={posts}
                         renderItem={({item}) => (
                             <Card
+                                onPress={() => {console.log('card presed', item._id)}}
                                 style={styles.item}
-                                status={userType === 'TEACHER'? '': _.find(item.quizResponse, o => o.studentID === clientProfile._id) ? 'success' : 'primary'}
+                                // status={userType === 'TEACHER'? '': _.find(item.quizResponse, o => o.studentID === clientProfile._id) ? 'success' : 'primary'}
                                 header={headerProps => 
                                     <View {...headerProps} style={{flexDirection:'row'}}>
                                         <View style={{padding:10, paddingRight:0}}>
                                             <Avatar size='tiny' source={{uri:imageLink}}/>
                                         </View>
                                         <View style={{flexGrow:1,padding:10, justifyContent:'center'}}>
-                                            <Text category='s1'> {item.postTitle} </Text>
+                                            <Text category='s1'> {item.title} </Text>
                                         </View>
                                         <View style={{padding:10, paddingRight:10, justifyContent:'center', flexDirection:'row', alignItems:'center'}}>
                                             <Text category='label' style={{marginRight:5}}>{calculateTimePassed(item.created)}</Text>
                                             {userType === 'TEACHER' && <Feather name="edit" size={12} color="black" />}
                                         </View>
                                     </View>}
-                                footer={userType !== 'TEACHER' ? () =>
-                                    <View style={{flexDirection:'row'}}>
-                                        <Button 
-                                            appearance="ghost" 
-                                            disabled={_.find(item.quizResponse, o => o.studentID === clientProfile._id) ? false : true} style={{flex:1}}
-                                            onPress={()=>{setViewScore(prev => prev === item._id ? null : item._id)}}
-                                            >View Score</Button>
-                                        <Button  style={{flex:1}} disabled={_.find(item.quizResponse, o => o.studentID === clientProfile._id) ? true : false}  appearance="ghost" onPress={()=>{
-                                            if(item.type === 'QUIZ'){
-                                                props.navigation.navigate("Test", {data:item})
-                                            }
-                                        }}>Quiz</Button>
-                                    </View> : null}
-                                disabled={item.type !== 'QUIZ'}
+                                // footer={userType !== 'TEACHER' ? () =>
+                                //     <View style={{flexDirection:'row'}}>
+                                //         <Button 
+                                //             appearance="ghost" 
+                                //             disabled={_.find(item.quizResponse, o => o.studentID === clientProfile._id) ? false : true} style={{flex:1}}
+                                //             onPress={()=>{setViewScore(prev => prev === item._id ? null : item._id)}}
+                                //             >View Score</Button>
+                                //         <Button  style={{flex:1}} disabled={_.find(item.quizResponse, o => o.studentID === clientProfile._id) ? true : false}  appearance="ghost" onPress={()=>{
+                                //             if(item.type === 'QUIZ'){
+                                //                 props.navigation.navigate("Test", {data:item})
+                                //             }
+                                //         }}>Quiz</Button>
+                                //     </View> : null}
                                 >
                                     <>
                                         <Text>
-                                            {item.postDescription}
+                                            {item.description}
                                         </Text>
-                                        {viewScore === item._id && <Text>
-                                            {`You have scored ${_.find(item.quizResponse, o => o.studentID === clientProfile._id).score}`}
-                                        </Text>}
                                     </>
                                
                             </Card>

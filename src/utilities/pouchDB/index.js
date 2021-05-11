@@ -40,8 +40,8 @@ class Repository {
     //'https://nikhil:password@127.0.0.1:5984/test2'
     constructor(dbName ='local_mobile_learning', remoteUrl = 'http://nikhil:password@192.168.43.126:5984/remote_mobile_learning', options = {}, pouchPlugin) {
         this.dbName = dbName;
+        this.remoteUrl = remoteUrl;
         if (pouchPlugin) PouchDB.plugin(pouchPlugin);
-
         this.db = new PouchDB('local_mobile_learning');
 
         this.createIndex = (fields) => {
@@ -219,6 +219,14 @@ class Repository {
                     }));
             });
         }
+
+        this.sync = async () => {
+            this.remoteDb = new PouchDB(remoteUrl, {ajax: {cache: false}});
+            this._sync = PouchDB.sync(this.db, this.remoteDb, {live: true, retry: true})
+                .on('error', error => console.error('Sync Error', error))
+                .on('change', info => console.log('Sync change', info))
+                .on('paused', info => console.log('Sync paused', info));
+        }
         
         // this.sync = () => {
         //     return new Promise((resolve, reject) => {
@@ -233,16 +241,16 @@ class Repository {
         //     });
         // }
 
-        this.sync = () => {
-            return new Promise((resolve, reject) => {
-                this.db.sync(`http://nikhil:password@192.168.43.126:5984/remote_mobile_learning`)
-                    .then((results) => resolve(results))
-                    .catch((error) => reject({
-                        error: `Could not sync with remote database`,
-                        dbError: error
-                    }));
-            });
-        }
+        // this.sync = () => {
+        //     return new Promise((resolve, reject) => {
+        //         this.db.sync(`http://nikhil:password@192.168.43.126:5984/remote_mobile_learning`)
+        //             .then((results) => resolve(results))
+        //             .catch((error) => reject({
+        //                 error: `Could not sync with remote database`,
+        //                 dbError: error
+        //             }));
+        //     });
+        // }
 
         this.close = () => {
             return new Promise((resolve, reject) => {
@@ -281,31 +289,25 @@ class Repository {
         //         }          
         // }
 
-        this.promisesReplicateFrom = async () => {
-            console.log('promisesReplicateFrom called!');
-            return new Promise((resolve, reject) => {
-                this.db.replicate.from('http://nikhil:password@192.168.43.126:5984/remote_mobile_learning')
-                    .then((doc) => {
-                        this.db.replicate.to('http://nikhil:password@192.168.43.126:5984/remote_mobile_learning')
-                            .then(doc => {
-                                resolve(doc);
-                            })
-                            .catch(err => {
-                                reject(err);
-                            })
-                    })
-                    .catch((error) => {
-                        console.log('Error Replicating', error);
-                        reject(error);
-                    }
-                );
-            })
-        }
-
-        this.promisesReplicateFrom(); //to be called at the beginning
-        
-        // this.replicateFrom = () => {
-        //    return this.db.replicate.from(remoteUrl, { live: true, retry: true })
+        // this.promisesReplicateFrom = async () => {
+        //     console.log('promisesReplicateFrom called!');
+        //     return new Promise((resolve, reject) => {
+        //         this.db.replicate.from('http://nikhil:password@192.168.43.126:5984/remote_mobile_learning')
+        //             .then((doc) => {
+        //                 this.db.replicate.to('http://nikhil:password@192.168.43.126:5984/remote_mobile_learning')
+        //                     .then(doc => {
+        //                         resolve(doc);
+        //                     })
+        //                     .catch(err => {
+        //                         reject(err);
+        //                     })
+        //             })
+        //             .catch((error) => {
+        //                 console.log('Error Replicating', error);
+        //                 reject(error);
+        //             }
+        //         );
+        //     })
         // }
 
         this.destroy = async () => {

@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler';
 import React, { useState, useEffect } from 'react';
 import * as eva from '@eva-design/eva';
-import {SafeAreaView, View, Image, Appearance, ToastAndroid} from 'react-native';
+import {SafeAreaView, View, Image, Appearance, ToastAndroid, LogBox} from 'react-native';
 import { ApplicationProvider, Divider, IconRegistry, Toggle } from '@ui-kitten/components';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
@@ -25,6 +25,10 @@ import Test from './src/screen/Test';
 import CreateJoinClass from './src/screen/CreateJoinClass';
 import ClassHome from './src/screen/ClassHome';
 import CreateTest from './src/screen/CreateTest';
+import CreateNew from './src/screen/CreateNew';
+import CreatePost from './src/screen/CreatePost';
+import CreateAssignExp from './src/screen/CreateAssignExp';
+//
 
 import { Layout, Input, Button, Text, Avatar, List, ListItem} from '@ui-kitten/components';
 import Repository from './src/utilities/pouchDB';
@@ -69,9 +73,15 @@ export default function App() {
     return (result) ? true : false;
   }
 
+  const startDatabaseSync = async () => {
+    await db.sync();
+  }
+
   React.useEffect(() => {
+    startDatabaseSync();
     checkIfAlreadyLoggedIn();
     checkForTheme();
+    LogBox.ignoreLogs(['VirtualizedLists should never be nested','Setting a timer']);
   }, []);
 
   const handleLogin = async () => {
@@ -193,6 +203,9 @@ export default function App() {
               <Drawer.Screen name="CreateJoinClass" component={CreateJoinClass} />
               <Drawer.Screen name="ClassHome" component={ClassHome} />
               <Drawer.Screen name="CreateTest" component={CreateTest} />
+              <Drawer.Screen name="CreateNew" component={CreateNew} />
+              <Drawer.Screen name="CreatePost" component={CreatePost} />
+              <Drawer.Screen name="CreateAssignExp" component={CreateAssignExp} />
             </Drawer.Navigator>
           </NavigationContainer>
         : 

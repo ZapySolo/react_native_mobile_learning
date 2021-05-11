@@ -154,9 +154,6 @@ const Settings = (props) => {
                     <Text category='s1' appearance="hint" >{'Software Information'}</Text>
                 </View>}
             />
-            <Button onPress={()=>{
-                db.promisesReplicateFrom();
-            }}>Sync Database</Button>
             <Divider />
         </Layout>
     </SafeAreaView>);

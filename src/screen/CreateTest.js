@@ -36,16 +36,16 @@ const CreateTest = (props) => {
     const [questionList, setQuestionList] = useState([{_id:'question:'+uuid.v4()}]);
 
     const [postObj, setPostObj] = useState({
-        _id:'post:'+uuid.v4(),
-        postTitle: '',
-        postDescription: 'New Test has been Assigned',
+        _id:'test:'+uuid.v4(),
+        title: '',
+        description: '',
         type: 'QUIZ',
         quizStartTime: new Date().toISOString(),
         quizEndTime: new Date().toISOString(),
         quizResponse: [],
         classID: _.get(props, 'route.params.data._id'),
         quizQuestions:[],
-        isDeleted:false,
+        isDeleted: false,
         created: new Date().toISOString()
     });
 

@@ -52,7 +52,7 @@ export default class s3 {
             successActionStatus: 201
         }
 
-        this.uploadProfilePhoto = async () => {
+        this.uploadProfilePhoto = async (setFileUploadPogress = (p) => {}) => {
             return new Promise(async(resolve, reject) => {
                 let image = await ImagePicker.launchImageLibraryAsync({
                     allowsEditing: true,
@@ -67,6 +67,10 @@ export default class s3 {
                         type: image.type+'/'+filename.split('.').pop()
                     }
                     RNS3.put(filter, {...this.options, keyPrefix: 'profile/'})
+                        .progress(event => {
+                            setFileUploadPogress(event.percent);
+                            console.log(`percent: ${event.percent}`);
+                        })
                         .then(response => {
                             //console.log('response',response);
                             if (response.status !== 201){

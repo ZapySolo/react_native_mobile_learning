@@ -143,15 +143,8 @@ const Leacture = (props) => {
                     
                 </View>
 
-            {_.get(props, 'route.params.userType') !== 'TEACHER' && <View style={{justifyContent:'center', alignItems:'center'}}>
-                    <View>
-                        <Button onPress={()=>{setDoubtButtonState(!doubtButtonState)}} style={{margin:10, marginBottom: 0}} status='primary'accessoryLeft={()=><Text>H</Text>}>
-                            Raise Doubt
-                        </Button>
-                    </View>
-                </View>}
                 <View style={{paddingLeft:10, marginTop: 10}}>
-                    <Text category="s1" >Other Students Doubt</Text>
+                    <Text category="s1" >Students Doubt</Text>
                 </View>
                 <View style={{flexGrow:1, marginTop:10}}>
                     <List
@@ -161,37 +154,35 @@ const Leacture = (props) => {
                         ItemSeparatorComponent={() => <Divider />}
                         />
                 </View>
-                {doubtButtonState && (
-                    <Layout level="1" style={{padding:10, flexDirection:'row',justifyContent:'center', alignItems:'center'}}>
-                        <Input
-                            style={{flexGrow:1, paddingLeft:20}}
-                            //accessoryLeft={()=><Text>Left</Text>}
-                            placeholder='Type your doubt here'
-                            //accessoryRight={()=><Text>Send</Text>}
-                            value={doubtText}
-                            onChangeText={nextValue => setDoubtText(nextValue)}
-                            />
-                        <Text onPress={async ()=>{
-                            if(doubtText !== ''){
-                                let newDoubtlist = [...doubtList, {title:'You', description:doubtText, userID: clientProfile._id}]
-                                setDoubtList(newDoubtlist);
-                                setDoubtText('');
+                <Layout level="1" style={{padding:10, flexDirection:'row',justifyContent:'center', alignItems:'center'}}>
+                    <Input
+                        style={{flexGrow:1, paddingLeft:20}}
+                        //accessoryLeft={()=><Text>Left</Text>}
+                        placeholder='Type your doubt here'
+                        //accessoryRight={()=><Text>Send</Text>}
+                        value={doubtText}
+                        onChangeText={nextValue => setDoubtText(nextValue)}
+                        />
+                    <Text onPress={async ()=>{
+                        if(doubtText !== ''){
+                            let newDoubtlist = [...doubtList, {title:'You', description:doubtText, userID: clientProfile._id}]
+                            setDoubtList(newDoubtlist);
+                            setDoubtText('');
 
-                                let res = await db.findByID(lectureDetails._id);
-                                console.log('findByID',res);
-                                if(res){
-                                    res.lectureDoubt = _.map(newDoubtlist, o => {
-                                        return {
-                                            description: o.description,
-                                            userID: o.userID
-                                        }
-                                    });
-                                    await db.upsert(res);
-                                }
+                            let res = await db.findByID(lectureDetails._id);
+                            console.log('findByID',res);
+                            if(res){
+                                res.lectureDoubt = _.map(newDoubtlist, o => {
+                                    return {
+                                        description: o.description,
+                                        userID: o.userID
+                                    }
+                                });
+                                await db.upsert(res);
                             }
-                        }} style={{padding:10}}>Send</Text>
-                    </Layout>
-                )}
+                        }
+                    }} style={{padding:10}}>Send</Text>
+                </Layout>
             </>:<>
                 <Image
                     style={{ width: '100%', resizeMode:'center', height: '50%', marginTop:'40%'}}

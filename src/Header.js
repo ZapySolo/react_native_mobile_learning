@@ -12,7 +12,7 @@ const Header = (props) => {
             <View style={{flexGrow:1}}>
                 <Text category='h5'>{props.title}</Text>
             </View>
-            {props.right && <View style={{width:55, justifyContent:'center', alignItems:'center'}}>
+            {props.right && <View style={{minWidth:55, justifyContent:'center', alignItems:'center'}}>
                 {props.right}
             </View>}
         </Layout>

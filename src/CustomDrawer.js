@@ -49,7 +49,6 @@ export default CustomDrawer = (props) => {
       }
     }
   
-  
     const getClassList = async () => {
       let listAsTeacher = await db.findMany({
         _id: {
@@ -62,7 +61,11 @@ export default CustomDrawer = (props) => {
         _id: {
           $regex: 'class'
         },
-        students: { $all: [clientProfile._id] }
+        students: { 
+          $elemMatch: {
+            studentID: clientProfile._id
+          }
+        }
       });
       listAsStudent = _.map(listAsStudent, o => {return {...o, userType:'STUDENT'}});
   
