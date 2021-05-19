@@ -119,7 +119,7 @@ const ClassHome = (props) => {
                         }  else if (val.row === 3) {
                             props.navigation.navigate("DataList", {data: {...classDetails}, userType, dataType: 'TEST'});
                         }  else if (val.row === 4) {
-                            props.navigation.navigate("DataList", {data: {...classDetails}, userType, dataType: 'EXAMS'});
+                            props.navigation.navigate("ClassDetails", {data: {...classDetails}, userType});
                         }
                     }}
                     onBackdropPress={() => setOverflowMenu(false)}
@@ -128,8 +128,8 @@ const ClassHome = (props) => {
                     <MenuItem title='Experiments'/>
                     <MenuItem title='Assignments'/>
                     <MenuItem title='Test'/>
+                    <MenuItem title='About'/>
                     <MenuItem disabled title='Exams'/>
-                    <MenuItem disabled title='About'/>
                     {(userType === 'TEACHER') && <MenuItem disabled title='Stats'/>}
                     {(userType === 'TEACHER') && <MenuItem disabled title='Delete Class'/>}
                 </OverflowMenu> 

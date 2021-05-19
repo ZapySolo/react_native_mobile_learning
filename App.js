@@ -30,6 +30,7 @@ import CreatePost from './src/screen/CreatePost';
 import CreateAssignExp from './src/screen/CreateAssignExp';
 import DataList from './src/screen/DataList';
 import AssignExptScreen from './src/screen/AssignExptScreen';
+import ClassDetails from './src/screen/ClassDetails';
 //
 
 import { Layout, Input, Button, Text, Avatar, List, ListItem} from '@ui-kitten/components';
@@ -210,6 +211,7 @@ export default function App() {
               <Drawer.Screen name="CreateAssignExp" component={CreateAssignExp} />
               <Drawer.Screen name="DataList" component={DataList} />
               <Drawer.Screen name="AssignExptScreen" component={AssignExptScreen} />
+              <Drawer.Screen name="ClassDetails" component={ClassDetails} />
             </Drawer.Navigator>
           </NavigationContainer>
         : 
