@@ -48,9 +48,12 @@ const Leacture = (props) => {
             startTime: moment(_.get(props, 'route.params.startTime')).valueOf(),
             now:  moment().valueOf(),
             started: moment(_.get(props, 'route.params.startTime')).valueOf() < moment().valueOf()
-        })
+        });
+        console.log("route.params",props.route.params);
         if(moment(_.get(props, 'route.params.startTime')).valueOf() < moment().valueOf()){
             setLectureStarted(true);
+            markAttendance();
+            
         } else {
             setLectureStarted(false);
             setSecUntillLectureStart(moment(_.get(props, 'route.params.startTime')).diff(moment(), 'seconds'));
@@ -59,6 +62,35 @@ const Leacture = (props) => {
         });
         return unsubscribe;
     }, [props.navigation, _.get(props, 'route.params')]);
+
+    const markAttendance = async () => {
+        if(props.route.params.userType === 'STUDENT') {
+            let clientID = JSON.parse(await AsyncStorage.getItem('@client_profile'))._id;
+            if(props.route.params.attendanceBy === 'COMPLETED_ANYTIME'){
+                if(!_.find(props.route.params.attendance, {studentID: clientID})) {
+                    let lectureData = await db.findByID(props.route.params._id);
+                    let attendanceList = [...(lectureData.attendance)?lectureData.attendance:[], {
+                        studentID: clientID,
+                        created: new Date().toISOString()
+                    }];
+                    lectureData.attendance = attendanceList;
+                    await db.upsert(lectureData);
+                }
+            } else if (props.route.params.attendanceBy === 'STUDENT_PRESENT'){
+                if(!_.find(props.route.params.attendance, {studentID: clientID})
+                    && moment().valueOf() < moment(_.get(props, 'route.params.endTime')).valueOf()
+                    ) {
+                    let lectureData = await db.findByID(props.route.params._id);
+                    let attendanceList = [...(lectureData.attendance)?lectureData.attendance:[], {
+                        studentID: clientID,
+                        created: new Date().toISOString()
+                    }];
+                    lectureData.attendance = attendanceList;
+                    await db.upsert(lectureData);
+                }
+            }
+        } 
+    }
 
     // React.useEffect(() => {
     //     BackHandler.addEventListener("hardwareBackPress", setYoutubePlaying(false));

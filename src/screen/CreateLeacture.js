@@ -26,7 +26,7 @@ const CreateLeacture = (props) => {
     const [selectedDateIndex, setSelectedDateIndex] = useState(0);
     const [selectedLectureStartIndex, setSelectedLectureStartIndex] = useState(0);
     const [selectedLectureEndIndex, setSelectedLectureEndIndex] = useState(0);
-    const [selectedAttendenceByIndex, setSelectedAttendenceByIndex] = useState(0);
+    const [selectedAttendenceByIndex, setSelectedAttendenceByIndex] = useState(2);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -38,7 +38,7 @@ const CreateLeacture = (props) => {
 
     const [classDetails, setClassDetails] = useState(_.get(props, 'route.params.data'));
 
-    const initialLectureObj = {
+    const initialLectureObj = () => new Object({
         _id:'lecture:'+uuid.v4(),
         lectureTitle:'',
         lectureDescription: '',
@@ -50,9 +50,10 @@ const CreateLeacture = (props) => {
         classID: _.get(props, 'route.params.data._id'),
         lectureDoubt:[],
         quizQuestions:[],
+        attendance: [],
         isDeleted:false,
         created: new Date().toISOString(),
-    }
+    });
     
     useEffect(() => {
         console.log('selectedLectureTypeIndex',selectedLectureTypeIndex);
@@ -71,7 +72,7 @@ const CreateLeacture = (props) => {
         // setLectureDetails({...lectureDetails, startTime: new Date(new Date(selectedDate) + new Date(diffInTime).toISOString())})
     }, [questionList]);
 
-    const [lectureDetails, setLectureDetails] = useState(initialLectureObj);
+    const [lectureDetails, setLectureDetails] = useState(initialLectureObj());
 
 
     // const lectureType = [
@@ -242,10 +243,10 @@ const CreateLeacture = (props) => {
                         }
                         setSelectedAttendenceByIndex(index)
                     }}>
-                    <Radio>Quiz</Radio>
-                    <Radio disabled>Student present for lecture</Radio>
+                    <Radio disabled>Quiz</Radio>
+                    <Radio>Student present for lecture</Radio>
                     <Radio>Student completing the lecture (anytime)</Radio>
-                </RadioGroup>   
+                </RadioGroup>
 
             {selectedAttendenceByIndex===0 && <>
                 <Text category="label" appearance='hint' style={{fontSize:12, marginBottom:5}}>Quiz Questions</Text>  
@@ -421,8 +422,8 @@ const CreateLeacture = (props) => {
                         obj.quizQuestions = [];
                     }
                     await db.upsert(obj);
-                    console.log('initialLectureObj',initialLectureObj);
-                    setLectureDetails(initialLectureObj);
+                    console.log('initialLectureObj',initialLectureObj());
+                    setLectureDetails(initialLectureObj());
                     setSuccessLectureCreateModal(true);
                     setTimeout(() => {
                         setSuccessLectureCreateModal(false);
